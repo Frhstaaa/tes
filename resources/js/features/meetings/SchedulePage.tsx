@@ -44,12 +44,12 @@ export function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl">Jadwal</h1>
           <p className="text-sm text-[var(--ink-soft)]">Meeting mendatang dan yang sedang aktif.</p>
         </div>
-        <Button variant="primary" onClick={() => setSheetOpen(true)}>
+        <Button variant="primary" className="shrink-0 whitespace-nowrap" onClick={() => setSheetOpen(true)}>
           <CalendarPlus className="h-4 w-4" strokeWidth={1.75} />
           <span>Buat jadwal</span>
         </Button>

@@ -50,8 +50,8 @@ export function LandingPage() {
             <span>Video meeting di browser · tanpa batas waktu</span>
           </div>
 
-          <div className="space-y-4">
-            <h1 className="font-display text-4xl font-bold leading-[1.03] tracking-[-0.035em] sm:text-5xl lg:text-[56px]">
+          <div className="space-y-3 sm:space-y-4">
+            <h1 className="font-display text-[34px] font-bold leading-[1.06] tracking-[-0.035em] sm:text-5xl lg:text-[56px] lg:leading-[1.03]">
               Ayo meeting.{' '}
               <span className="text-[var(--moss)] dark:text-[var(--moss-light)]">
                 Buat ruang, kirim tautan.
