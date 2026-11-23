@@ -1,0 +1,54 @@
+{
+  "_useRoomSessionStore-CrTeWTq9.js": {
+    "file": "assets/useRoomSessionStore-CrTeWTq9.js",
+    "name": "useRoomSessionStore",
+    "imports": [
+      "resources/js/main.tsx"
+    ]
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-BjJLbRsr.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/features/prejoin/PrejoinPage.tsx": {
+    "file": "assets/PrejoinPage-BxnjeywC.js",
+    "name": "PrejoinPage",
+    "src": "resources/js/features/prejoin/PrejoinPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/main.tsx",
+      "_useRoomSessionStore-CrTeWTq9.js"
+    ]
+  },
+  "resources/js/features/room/FinishedPage.tsx": {
+    "file": "assets/FinishedPage-MjZOM38d.js",
+    "name": "FinishedPage",
+    "src": "resources/js/features/room/FinishedPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/main.tsx"
+    ]
+  },
+  "resources/js/features/room/JitsiRoomPage.tsx": {
+    "file": "assets/JitsiRoomPage-BFMjfv90.js",
+    "name": "JitsiRoomPage",
+    "src": "resources/js/features/room/JitsiRoomPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/main.tsx",
+      "_useRoomSessionStore-CrTeWTq9.js"
+    ]
+  },
+  "resources/js/main.tsx": {
+    "file": "assets/main-MTG1JMjn.js",
+    "name": "main",
+    "src": "resources/js/main.tsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/features/prejoin/PrejoinPage.tsx",
+      "resources/js/features/room/JitsiRoomPage.tsx",
+      "resources/js/features/room/FinishedPage.tsx"
+    ]
+  }
+}

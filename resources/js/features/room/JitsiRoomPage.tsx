@@ -1,0 +1,423 @@
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Check, Lock, Shield, Unlock, UserX, X } from 'lucide-react';
+import { useRoomSessionStore } from '@/stores/useRoomSessionStore';
+import { loadJitsiExternalApi, type JitsiMeetExternalAPIInstance } from '@/lib/jitsi';
+import { api, extractErrorMessage } from '@/lib/api';
+import { Button } from '@/components/ui/Button';
+import { Sheet } from '@/components/ui/Sheet';
+import { BrandLogo } from '@/components/BrandLogo';
+import { useToastStore } from '@/stores/useToastStore';
+import type { MeetingParticipant } from '@/types';
+
+export function JitsiRoomPage() {
+  const { kode = '' } = useParams<{ kode: string }>();
+  const navigate = useNavigate();
+  const { session, clearSession } = useRoomSessionStore();
+  const pushToast = useToastStore((s) => s.push);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const apiRef = useRef<JitsiMeetExternalAPIInstance | null>(null);
+  const isEndingRef = useRef(false);
+
+  const [loadError, setLoadError] = useState('');
+  const [hostSheetOpen, setHostSheetOpen] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [waitingList, setWaitingList] = useState<MeetingParticipant[]>([]);
+  const [activeList, setActiveList] = useState<MeetingParticipant[]>([]);
+
+  useEffect(() => {
+    if (!session || session.code !== kode) {
+      navigate(`/m/${kode}`, { replace: true });
+      return;
+    }
+
+    let disposed = false;
+
+    async function mountJitsi() {
+      if (!session || !containerRef.current) return;
+
+      try {
+        const JitsiAPI = await loadJitsiExternalApi(session.domain);
+        if (disposed || !containerRef.current) return;
+
+        const instance = new JitsiAPI(session.domain, {
+          roomName: session.room,
+          jwt: session.jwt,
+          parentNode: containerRef.current,
+          width: '100%',
+          height: '100%',
+          userInfo: {
+            displayName: session.displayName,
+          },
+          configOverwrite: {
+            prejoinPageEnabled: false,
+            disableDeepLinking: true,
+            startWithAudioMuted: session.startMutedAudio,
+            startWithVideoMuted: session.startMutedVideo,
+          },
+          interfaceConfigOverwrite: {
+            APP_NAME: 'Meetingkeun',
+            NATIVE_APP_NAME: 'Meetingkeun',
+            DEFAULT_BACKGROUND: '#16211C',
+            SHOW_JITSI_WATERMARK: false,
+            HIDE_DEEP_LINKING_LOGO: true,
+            SHOW_BRAND_WATERMARK: false,
+            SHOW_WATERMARK_FOR_GUESTS: false,
+            SHOW_POWERED_BY: false,
+            TOOLBAR_BUTTONS: [
+              'microphone',
+              'camera',
+              'closedcaptions',
+              'desktop',
+              'fullscreen',
+              'fodeviceselection',
+              'hangup',
+              'profile',
+              'recording',
+              'livestreaming',
+              'etherpad',
+              'sharedvideo',
+              'settings',
+              'raisehand',
+              'videoquality',
+              'filmstrip',
+              'feedback',
+              'stats',
+              'shortcuts',
+              'tileview',
+            ],
+          },
+        });
+
+        apiRef.current = instance;
+
+        const iframe = containerRef.current.querySelector('iframe');
+        if (iframe) {
+          iframe.setAttribute(
+            'allow',
+            'camera *; microphone *; display-capture *; autoplay *; clipboard-write *; fullscreen *'
+          );
+        }
+
+        const handleLeave = async () => {
+          if (isEndingRef.current) return;
+          isEndingRef.current = true;
+          try {
+            await api.post(`/meetings/${kode}/leave`, {
+              participant_id: session.participantId,
+            });
+          } catch {
+            // Best-effort leave recording
+          }
+          const durationMs = Date.now() - session.joinedAtMs;
+          clearSession();
+          navigate(`/m/${kode}/selesai`, {
+            replace: true,
+            state: { durationMs },
+          });
+        };
+
+        instance.addListener('videoConferenceLeft', handleLeave);
+        instance.addListener('readyToClose', handleLeave);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : 'Gagal memuat ruang meeting.');
+      }
+    }
+
+    mountJitsi();
+
+    return () => {
+      disposed = true;
+      apiRef.current?.dispose();
+      apiRef.current = null;
+    };
+  }, [session, kode, navigate, clearSession]);
+
+  // Poll meeting & participant status so guests/cohosts auto-exit when host ends or kicks them
+  useEffect(() => {
+    if (!session) return;
+
+    const checkRoomStatus = async () => {
+      try {
+        const res = await api.get<{ status: string; meeting_status: string }>(
+          `/meetings/${kode}/participants/${session.participantId}/status`
+        );
+        if (res.data.meeting_status === 'ended' || res.data.meeting_status === 'cancelled' || res.data.status === 'ended') {
+          apiRef.current?.dispose();
+          apiRef.current = null;
+          const durationMs = Date.now() - session.joinedAtMs;
+          clearSession();
+          pushToast('Meeting telah diakhiri oleh host.', 'default');
+          navigate(`/m/${kode}/selesai`, { replace: true, state: { durationMs } });
+        } else if (res.data.status === 'kicked') {
+          apiRef.current?.dispose();
+          apiRef.current = null;
+          clearSession();
+          pushToast('Kamu dikeluarkan dari ruang oleh host.', 'danger');
+          navigate('/', { replace: true });
+        }
+      } catch {
+        // Ignore transient poll errors
+      }
+    };
+
+    const timer = window.setInterval(checkRoomStatus, 3500);
+    return () => window.clearInterval(timer);
+  }, [session, kode, clearSession, navigate, pushToast]);
+
+  // Poll host waiting list when moderator panel is open
+  const canModerate = session?.role === 'host' || session?.role === 'cohost';
+
+  useEffect(() => {
+    if (!session || !canModerate) return;
+
+    const fetchWaiting = async () => {
+      try {
+        const res = await api.get<{
+          waiting: MeetingParticipant[];
+          active: MeetingParticipant[];
+        }>(`/meetings/${kode}/waiting`);
+        setWaitingList(res.data.waiting);
+        setActiveList(res.data.active);
+      } catch {
+        // Ignore transient errors
+      }
+    };
+
+    fetchWaiting();
+    const interval = window.setInterval(fetchWaiting, 4000);
+    return () => window.clearInterval(interval);
+  }, [session, kode, hostSheetOpen]);
+
+  const handleToggleLock = async () => {
+    try {
+      const res = await api.post<{ locked: boolean }>(`/meetings/${kode}/lock`, {
+        locked: !locked,
+      });
+      setLocked(res.data.locked);
+      pushToast(res.data.locked ? 'Ruang dikunci.' : 'Kunci ruang dibuka.', 'default');
+    } catch {
+      pushToast('Gagal mengubah kunci ruang.', 'danger');
+    }
+  };
+
+  const handleAdmit = async (id: number) => {
+    try {
+      await api.post(`/meetings/${kode}/participants/${id}/admit`);
+      setWaitingList((prev) => prev.filter((p) => p.id !== id));
+      pushToast('Peserta diizinkan masuk.', 'success');
+    } catch (err) {
+      pushToast(extractErrorMessage(err, 'Gagal mengizinkan peserta.'), 'danger');
+    }
+  };
+
+  const handleDeny = async (id: number) => {
+    try {
+      await api.post(`/meetings/${kode}/participants/${id}/deny`);
+      setWaitingList((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      pushToast(extractErrorMessage(err, 'Gagal menolak peserta.'), 'danger');
+    }
+  };
+
+  const handleKick = async (id: number) => {
+    try {
+      await api.post(`/meetings/${kode}/participants/${id}/kick`);
+      setActiveList((prev) => prev.filter((p) => p.id !== id));
+      pushToast('Peserta dikeluarkan.', 'default');
+    } catch (err) {
+      pushToast(extractErrorMessage(err, 'Gagal mengeluarkan peserta.'), 'danger');
+    }
+  };
+
+  const handleToggleCohost = async (id: number) => {
+    try {
+      const res = await api.post<{ participant: MeetingParticipant }>(
+        `/meetings/${kode}/participants/${id}/cohost`
+      );
+      setActiveList((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, role: res.data.participant.role } : p))
+      );
+      pushToast(
+        res.data.participant.role === 'cohost' ? 'Dijadikan Co-host.' : 'Hak Co-host dicabut.',
+        'default'
+      );
+    } catch (err) {
+      pushToast(extractErrorMessage(err, 'Gagal mengubah peran co-host.'), 'danger');
+    }
+  };
+
+  const handleEndAll = async () => {
+    isEndingRef.current = true;
+    try {
+      await api.post(`/meetings/${kode}/end`);
+      try {
+        apiRef.current?.executeCommand('hangup');
+      } catch {
+        // Ignore if Jitsi already closed
+      }
+      apiRef.current?.dispose();
+      apiRef.current = null;
+      const durationMs = session ? Date.now() - session.joinedAtMs : undefined;
+      clearSession();
+      pushToast('Meeting diakhiri untuk semua peserta.', 'default');
+      navigate(`/m/${kode}/selesai`, { replace: true, state: { durationMs } });
+    } catch (err) {
+      pushToast(extractErrorMessage(err, 'Gagal mengakhiri meeting.'), 'danger');
+    }
+  };
+
+  return (
+    <div className="relative h-dvh w-full overflow-hidden bg-[#16211C] text-[#F6F2E9]">
+      {loadError ? (
+        <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+          <BrandLogo size="sm" inverted className="mb-4" />
+          <h1 className="font-display text-xl font-bold">Gagal memuat ruang</h1>
+          <p className="mt-2 max-w-sm text-sm text-[#A7B5AE]">{loadError}</p>
+          <Button
+            variant="outline"
+            className="mt-5 border-[#2C3D34] text-[#F6F2E9]"
+            onClick={() => navigate(`/m/${kode}`, { replace: true })}
+          >
+            Kembali ke pra-join
+          </Button>
+        </div>
+      ) : (
+        <div ref={containerRef} className="h-full w-full" />
+      )}
+
+      {canModerate && (
+        <div className="fixed bottom-20 left-3 z-30 sm:bottom-4 sm:left-4">
+          <Button
+            variant="outline"
+            onClick={() => setHostSheetOpen(true)}
+            className="border-[#2C3D34] bg-[#16211C]/90 text-[#F6F2E9] hover:bg-[#1E2C25]"
+          >
+            <Shield className="h-4 w-4 text-[#C9A66B]" strokeWidth={1.75} />
+            <span>Panel Host</span>
+            {waitingList.length > 0 && (
+              <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4552B] px-1.5 font-mono text-xs text-[#F6F2E9]">
+                {waitingList.length}
+              </span>
+            )}
+          </Button>
+        </div>
+      )}
+
+      <Sheet
+        open={hostSheetOpen}
+        onClose={() => setHostSheetOpen(false)}
+        title="Kontrol Host"
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)] px-3.5 py-3">
+            <div className="flex items-center gap-2.5">
+              {locked ? (
+                <Lock className="h-4 w-4 text-[var(--clay)]" strokeWidth={1.75} />
+              ) : (
+                <Unlock className="h-4 w-4 text-[var(--moss)]" strokeWidth={1.75} />
+              )}
+              <span className="text-sm font-medium">
+                {locked ? 'Ruang terkunci' : 'Ruang terbuka'}
+              </span>
+            </div>
+            <Button variant="outline" onClick={handleToggleLock}>
+              {locked ? 'Buka kunci' : 'Kunci ruang'}
+            </Button>
+          </div>
+
+          <section className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+              Menunggu izin ({waitingList.length})
+            </h3>
+            {waitingList.length === 0 ? (
+              <p className="text-sm text-[var(--ink-soft)]">Tidak ada yang menunggu.</p>
+            ) : (
+              <ul className="divide-y divide-[var(--line)] rounded-[10px] border border-[var(--line)]">
+                {waitingList.map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-2 p-3">
+                    <span className="truncate text-sm font-medium">{p.display_name}</span>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="primary"
+                        size="icon"
+                        aria-label={`Terima ${p.display_name}`}
+                        onClick={() => handleAdmit(p.id)}
+                      >
+                        <Check className="h-4 w-4" strokeWidth={1.75} />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label={`Tolak ${p.display_name}`}
+                        onClick={() => handleDeny(p.id)}
+                      >
+                        <X className="h-4 w-4 text-[var(--clay)]" strokeWidth={1.75} />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+              Peserta aktif ({activeList.length})
+            </h3>
+            <ul className="divide-y divide-[var(--line)] rounded-[10px] border border-[var(--line)]">
+              {activeList.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-2 p-3">
+                  <span className="truncate text-sm font-medium">
+                    {p.display_name}{' '}
+                    {p.role === 'host' && (
+                      <span className="font-mono text-xs text-[var(--moss)]">(Host)</span>
+                    )}
+                    {p.role === 'cohost' && (
+                      <span className="font-mono text-xs text-[var(--sand)]">(Co-host)</span>
+                    )}
+                  </span>
+                  {p.role !== 'host' && (
+                    <div className="flex items-center gap-1">
+                      {session?.role === 'host' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={p.role === 'cohost' ? 'Cabut Co-host' : 'Jadikan Co-host'}
+                          aria-label={`Ubah peran co-host ${p.display_name}`}
+                          onClick={() => handleToggleCohost(p.id)}
+                        >
+                          <Shield
+                            className={`h-4 w-4 ${p.role === 'cohost' ? 'text-[var(--sand)]' : 'text-[var(--ink-soft)]'}`}
+                            strokeWidth={1.75}
+                          />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Keluarkan ${p.display_name}`}
+                        onClick={() => handleKick(p.id)}
+                      >
+                        <UserX className="h-4 w-4 text-[var(--clay)]" strokeWidth={1.75} />
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {session?.role === 'host' && (
+            <div className="border-t border-[var(--line)] pt-4">
+              <Button variant="danger" size="lg" className="w-full" onClick={handleEndAll}>
+                Akhiri untuk semua
+              </Button>
+            </div>
+          )}
+        </div>
+      </Sheet>
+    </div>
+  );
+}

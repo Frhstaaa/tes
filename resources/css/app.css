@@ -1,0 +1,78 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --paper: #F6F2E9;
+  --paper-2: #ECE6D8;
+  --ink: #16211C;
+  --ink-soft: #4A5750;
+  --moss: #2E5E4E;
+  --moss-hover: #244B3E;
+  --moss-light: #8FC4AE;
+  --moss-fg: #F6F2E9;
+  --clay: #B8431E;
+  --clay-hover: #9E3818;
+  --clay-bright: #D4552B;
+  --sand: #C9A66B;
+  --line: #D8D0BE;
+
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-sans: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-control: 10px;
+  --radius-sheet: 16px;
+}
+
+.dark {
+  --paper: #16211C;
+  --paper-2: #1E2C25;
+  --ink: #F6F2E9;
+  --ink-soft: #A7B5AE;
+  --moss: #3F7D68;
+  --moss-hover: #4C947C;
+  --moss-light: #8FC4AE;
+  --moss-fg: #F6F2E9;
+  --clay: #C94E26;
+  --clay-hover: #D85B32;
+  --clay-bright: #E0663E;
+  --sand: #D4B47C;
+  --line: #2C3D34;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--paper);
+    color: var(--ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.035em;
+  }
+
+  code, .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input, textarea, select {
+    font-size: 16px;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--moss);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
