@@ -222,7 +222,7 @@ export function AuthModal() {
                   label="Kata sandi"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder="Masukkan kata sandi"
                   error={loginForm.formState.errors.password?.message}
                   {...loginForm.register('password')}
                 />
@@ -276,7 +276,7 @@ export function AuthModal() {
                     label="Kata sandi"
                     type="password"
                     autoComplete="new-password"
-                    placeholder="Min. 8 karakter"
+                    placeholder="Minimal 8 karakter"
                     error={registerForm.formState.errors.password?.message}
                     {...registerForm.register('password')}
                   />
@@ -284,7 +284,7 @@ export function AuthModal() {
                     label="Ulangi sandi"
                     type="password"
                     autoComplete="new-password"
-                    placeholder="Ketik ulang"
+                    placeholder="Ketik ulang sandi"
                     error={registerForm.formState.errors.password_confirmation?.message}
                     {...registerForm.register('password_confirmation')}
                   />
