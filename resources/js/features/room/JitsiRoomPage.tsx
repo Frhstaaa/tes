@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Check, Lock, Shield, Unlock, UserX, X } from 'lucide-react';
+import { Check, Layers, Lock, Plus, Shield, Shuffle, Unlock, UserX, X } from 'lucide-react';
 import { useRoomSessionStore } from '@/stores/useRoomSessionStore';
 import { loadJitsiExternalApi, type JitsiMeetExternalAPIInstance } from '@/lib/jitsi';
 import { api, extractErrorMessage } from '@/lib/api';
@@ -25,6 +25,10 @@ export function JitsiRoomPage() {
   const [locked, setLocked] = useState(false);
   const [waitingList, setWaitingList] = useState<MeetingParticipant[]>([]);
   const [activeList, setActiveList] = useState<MeetingParticipant[]>([]);
+  const [breakoutRoomName, setBreakoutRoomName] = useState('');
+  const [breakoutRooms, setBreakoutRooms] = useState<
+    Array<{ id: string; jid: string; name: string; participantCount: number }>
+  >([]);
 
   useEffect(() => {
     if (!session || session.code !== kode) {
@@ -55,6 +59,11 @@ export function JitsiRoomPage() {
             disableDeepLinking: true,
             startWithAudioMuted: session.startMutedAudio,
             startWithVideoMuted: session.startMutedVideo,
+            breakoutRooms: {
+              hideAddRoomButton: false,
+              hideAutoAssignButton: false,
+              hideJoinRoomButton: false,
+            },
           },
           interfaceConfigOverwrite: {
             APP_NAME: 'Meetingkeun',
@@ -74,6 +83,7 @@ export function JitsiRoomPage() {
               'fodeviceselection',
               'hangup',
               'profile',
+              'participants-pane',
               'recording',
               'livestreaming',
               'etherpad',
@@ -120,6 +130,24 @@ export function JitsiRoomPage() {
 
         instance.addListener('videoConferenceLeft', handleLeave);
         instance.addListener('readyToClose', handleLeave);
+        instance.addListener('breakoutRoomsUpdated', (payload: unknown) => {
+          const data = payload as {
+            rooms?: Record<
+              string,
+              { id?: string; jid?: string; name?: string; participants?: Record<string, unknown>; isMainRoom?: boolean }
+            >;
+          } | null;
+          if (!data?.rooms) return;
+          const list = Object.values(data.rooms)
+            .filter((r) => !r.isMainRoom && r.jid)
+            .map((r) => ({
+              id: r.id ?? r.jid ?? '',
+              jid: r.jid ?? '',
+              name: r.name || 'Breakout Room',
+              participantCount: r.participants ? Object.keys(r.participants).length : 0,
+            }));
+          setBreakoutRooms(list);
+        });
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : 'Gagal memuat ruang meeting.');
       }
@@ -245,6 +273,45 @@ export function JitsiRoomPage() {
       );
     } catch (err) {
       pushToast(extractErrorMessage(err, 'Gagal mengubah peran co-host.'), 'danger');
+    }
+  };
+
+  const handleAddBreakoutRoom = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = breakoutRoomName.trim() || `Kelompok ${breakoutRooms.length + 1}`;
+    try {
+      apiRef.current?.executeCommand('addBreakoutRoom', name);
+      setBreakoutRoomName('');
+      pushToast(`Breakout room "${name}" dibuat.`, 'success');
+    } catch {
+      pushToast('Server meeting belum mendukung Breakout Room.', 'danger');
+    }
+  };
+
+  const handleAutoAssignBreakout = () => {
+    try {
+      apiRef.current?.executeCommand('autoAssignToBreakoutRooms');
+      pushToast('Peserta dibagi otomatis ke breakout room.', 'default');
+    } catch {
+      pushToast('Gagal membagi peserta otomatis.', 'danger');
+    }
+  };
+
+  const handleJoinBreakout = (jid: string) => {
+    try {
+      apiRef.current?.executeCommand('joinBreakoutRoom', jid);
+      setHostSheetOpen(false);
+    } catch {
+      pushToast('Gagal masuk ke breakout room.', 'danger');
+    }
+  };
+
+  const handleCloseBreakout = (jid: string) => {
+    try {
+      apiRef.current?.executeCommand('closeBreakoutRoom', jid);
+      pushToast('Breakout room ditutup.', 'default');
+    } catch {
+      pushToast('Gagal menutup breakout room.', 'danger');
     }
   };
 
@@ -380,7 +447,68 @@ export function JitsiRoomPage() {
                   </span>
                   {p.role !== 'host' && (
                     <div className="flex items-center gap-1">
-                      {session?.role === 'host' && (
+                      <section className="space-y-2.5 border-t border-[var(--line)] pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+                <Layers className="h-3.5 w-3.5" strokeWidth={1.75} />
+                <span>Breakout Rooms ({breakoutRooms.length})</span>
+              </h3>
+              {breakoutRooms.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleAutoAssignBreakout}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-[8px] border border-[var(--line)] bg-[var(--paper-2)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-2)]/70"
+                >
+                  <Shuffle className="h-3 w-3" strokeWidth={1.75} />
+                  <span>Bagi otomatis</span>
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleAddBreakoutRoom} className="flex gap-2">
+              <input
+                type="text"
+                value={breakoutRoomName}
+                onChange={(e) => setBreakoutRoomName(e.target.value)}
+                placeholder={`Kelompok ${breakoutRooms.length + 1}`}
+                className="min-h-[40px] flex-1 rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-soft)]/70 focus:border-[var(--moss)] focus:bg-[var(--paper)] focus:outline-none"
+              />
+              <Button type="submit" variant="outline" className="shrink-0">
+                <Plus className="h-4 w-4" strokeWidth={1.75} />
+                <span>Buat</span>
+              </Button>
+            </form>
+
+            {breakoutRooms.length > 0 && (
+              <ul className="divide-y divide-[var(--line)] rounded-[10px] border border-[var(--line)]">
+                {breakoutRooms.map((room) => (
+                  <li key={room.jid} className="flex items-center justify-between gap-2 p-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{room.name}</p>
+                      <p className="font-mono text-[11px] text-[var(--ink-soft)]">
+                        {room.participantCount} peserta
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" onClick={() => handleJoinBreakout(room.jid)}>
+                        Masuk
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Tutup ${room.name}`}
+                        onClick={() => handleCloseBreakout(room.jid)}
+                      >
+                        <X className="h-4 w-4 text-[var(--clay)]" strokeWidth={1.75} />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {session?.role === 'host' && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -407,6 +535,67 @@ export function JitsiRoomPage() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section className="space-y-2.5 border-t border-[var(--line)] pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+                <Layers className="h-3.5 w-3.5" strokeWidth={1.75} />
+                <span>Breakout Rooms ({breakoutRooms.length})</span>
+              </h3>
+              {breakoutRooms.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleAutoAssignBreakout}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-[8px] border border-[var(--line)] bg-[var(--paper-2)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-2)]/70"
+                >
+                  <Shuffle className="h-3 w-3" strokeWidth={1.75} />
+                  <span>Bagi otomatis</span>
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleAddBreakoutRoom} className="flex gap-2">
+              <input
+                type="text"
+                value={breakoutRoomName}
+                onChange={(e) => setBreakoutRoomName(e.target.value)}
+                placeholder={`Kelompok ${breakoutRooms.length + 1}`}
+                className="min-h-[40px] flex-1 rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-soft)]/70 focus:border-[var(--moss)] focus:bg-[var(--paper)] focus:outline-none"
+              />
+              <Button type="submit" variant="outline" className="shrink-0">
+                <Plus className="h-4 w-4" strokeWidth={1.75} />
+                <span>Buat</span>
+              </Button>
+            </form>
+
+            {breakoutRooms.length > 0 && (
+              <ul className="divide-y divide-[var(--line)] rounded-[10px] border border-[var(--line)]">
+                {breakoutRooms.map((room) => (
+                  <li key={room.jid} className="flex items-center justify-between gap-2 p-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{room.name}</p>
+                      <p className="font-mono text-[11px] text-[var(--ink-soft)]">
+                        {room.participantCount} peserta
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" onClick={() => handleJoinBreakout(room.jid)}>
+                        Masuk
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Tutup ${room.name}`}
+                        onClick={() => handleCloseBreakout(room.jid)}
+                      >
+                        <X className="h-4 w-4 text-[var(--clay)]" strokeWidth={1.75} />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           {session?.role === 'host' && (
