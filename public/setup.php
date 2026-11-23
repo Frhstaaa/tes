@@ -1,15 +1,14 @@
 <?php
 /**
- * Meetingkeun — CyberPanel Setup & GitHub Auto-Updater
+ * Meetingkeun — Pure-PHP CyberPanel Setup & GitHub Updater (Tanpa Wajib SSH/Exec)
  * Dibuat oleh Tiyas Frahesta
  *
  * Akses via: https://meetingkeun.frahesta.com/setup.php?token=meetingkeun-setup-2026
- * PENTING: Segera ganti DEPLOY_SETUP_TOKEN di .env setelah setup awal selesai.
  */
 
-declare(strict_types=1);
-
 @set_time_limit(300);
+@ini_set('display_errors', '1');
+error_reporting(E_ALL);
 
 $basePath = dirname(__DIR__);
 $envPath = $basePath . '/.env';
@@ -33,86 +32,115 @@ function readEnvValue(string $envPath, string $key, string $default = ''): strin
     return $default;
 }
 
+function runArtisan(string $basePath, string $command, array $params = []): array
+{
+    try {
+        require_once $basePath . '/vendor/autoload.php';
+        $app = require $basePath . '/bootstrap/app.php';
+        $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+        $kernel->bootstrap();
+        $code = $kernel->call($command, $params);
+        $output = trim($kernel->output());
+        return [
+            'code' => $code,
+            'output' => $output !== '' ? $output : "(artisan {$command} selesai)",
+        ];
+    } catch (Throwable $e) {
+        return [
+            'code' => 1,
+            'output' => $e->getMessage() . "\n" . $e->getFile() . ':' . $e->getLine(),
+        ];
+    }
+}
+
+function downloadAndExtractGithubZip(string $basePath, string $zipUrl): array
+{
+    if (! class_exists('ZipArchive')) {
+        return ['code' => 1, 'output' => 'Ekstensi PHP ZipArchive tidak aktif di server.'];
+    }
+
+    $tmpZip = $basePath . '/storage/app/github-update.zip';
+    $data = @file_get_contents($zipUrl);
+    if ($data === false && function_exists('curl_init')) {
+        $ch = curl_init($zipUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_USERAGENT => 'Meetingkeun-Updater/1.0',
+        ]);
+        $data = curl_exec($ch);
+        curl_close($ch);
+    }
+
+    if (! is_string($data) || $data === '') {
+        return ['code' => 1, 'output' => 'Gagal mengunduh arsip dari GitHub.'];
+    }
+
+    file_put_contents($tmpZip, $data);
+
+    $zip = new ZipArchive();
+    if ($zip->open($tmpZip) !== true) {
+        @unlink($tmpZip);
+        return ['code' => 1, 'output' => 'Gagal membuka file ZIP dari GitHub.'];
+    }
+
+    $updated = 0;
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $entry = $zip->getNameIndex($i);
+        if ($entry === false) {
+            continue;
+        }
+        // Strip top-level folder (e.g. "tes-main/")
+        $pos = strpos($entry, '/');
+        if ($pos === false) {
+            continue;
+        }
+        $rel = substr($entry, $pos + 1);
+        if ($rel === '' || str_starts_with($rel, '.env') || str_starts_with($rel, 'storage/')) {
+            continue;
+        }
+
+        $dest = $basePath . '/' . $rel;
+        if (str_ends_with($rel, '/')) {
+            if (! is_dir($dest)) {
+                @mkdir($dest, 0755, true);
+            }
+            continue;
+        }
+
+        $dir = dirname($dest);
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        $content = $zip->getFromIndex($i);
+        if ($content !== false) {
+            file_put_contents($dest, $content);
+            $updated++;
+        }
+    }
+
+    $zip->close();
+    @unlink($tmpZip);
+
+    return ['code' => 0, 'output' => "Berhasil memperbarui {$updated} file dari GitHub (branch main)."];
+}
+
 $expectedToken = readEnvValue($envPath, 'DEPLOY_SETUP_TOKEN', 'meetingkeun-setup-2026');
 $providedToken = (string) ($_POST['token'] ?? $_GET['token'] ?? '');
 $authenticated = $providedToken !== '' && hash_equals($expectedToken, $providedToken);
-
-function runShell(string $cmd, string $cwd): array
-{
-    if (function_exists('proc_open')) {
-        $descriptor = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
-        $process = @proc_open($cmd, $descriptor, $pipes, $cwd);
-        if (is_resource($process)) {
-            fclose($pipes[0]);
-            $stdout = stream_get_contents($pipes[1]) ?: '';
-            $stderr = stream_get_contents($pipes[2]) ?: '';
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            $code = proc_close($process);
-            return [
-                'code' => $code,
-                'output' => trim($stdout . ($stderr !== '' ? "\n" . $stderr : '')),
-            ];
-        }
-    }
-
-    if (function_exists('exec')) {
-        $lines = [];
-        $code = 0;
-        $escapedCwd = escapeshellarg($cwd);
-        @exec("cd {$escapedCwd} && {$cmd} 2>&1", $lines, $code);
-        return [
-            'code' => $code,
-            'output' => trim(implode("\n", $lines)),
-        ];
-    }
-
-    return [
-        'code' => 1,
-        'output' => 'Fungsi proc_open dan exec dinonaktifkan di php.ini server. Jalankan perintah lewat SSH/Terminal CyberPanel.',
-    ];
-}
-
-function findBinary(array $candidates, string $fallback): string
-{
-    foreach ($candidates as $path) {
-        if ($path !== '' && is_executable($path)) {
-            return $path;
-        }
-    }
-    return $fallback;
-}
-
-$phpBin = PHP_BINARY ?: '/usr/local/lsws/lsphp83/bin/php';
-$composerBin = findBinary(['/usr/local/bin/composer', '/usr/bin/composer'], 'composer');
-$gitBin = findBinary(['/usr/bin/git', '/usr/local/bin/git'], 'git');
-$npmBin = findBinary(['/usr/bin/npm', '/usr/local/bin/npm'], 'npm');
 
 $logs = [];
 $action = (string) ($_POST['action'] ?? '');
 
 if ($authenticated && $_SERVER['REQUEST_METHOD'] === 'POST' && $action !== '') {
-    $run = function (string $label, string $cmd) use (&$logs, $basePath): int {
-        $res = runShell($cmd, $basePath);
-        $logs[] = [
-            'label' => $label,
-            'code' => $res['code'],
-            'output' => $res['output'] !== '' ? $res['output'] : '(selesai tanpa output)',
-        ];
-        return $res['code'];
-    };
-
     if ($action === 'setup_initial') {
         if (! is_file($envPath)) {
-            $existingKey = '';
+            $newKey = 'base64:' . base64_encode(random_bytes(32));
             $envContent = <<<ENV
 APP_NAME=Meetingkeun
 APP_ENV=production
-APP_KEY={$existingKey}
+APP_KEY={$newKey}
 APP_DEBUG=false
 APP_TIMEZONE=Asia/Jakarta
 APP_URL=https://meetingkeun.frahesta.com
@@ -141,60 +169,39 @@ JITSI_JWT_TTL_MINUTES=120
 DEPLOY_SETUP_TOKEN={$expectedToken}
 ENV;
             file_put_contents($envPath, $envContent . "\n");
-            $logs[] = ['label' => 'Buat file .env produksi', 'code' => 0, 'output' => '.env berhasil dibuat untuk meetingkeun.frahesta.com'];
+            $logs[] = ['label' => 'Buat .env produksi + APP_KEY', 'code' => 0, 'output' => '.env berhasil dibuat.'];
         } else {
-            $logs[] = ['label' => 'Cek file .env', 'code' => 0, 'output' => '.env sudah ada (tidak ditimpa).'];
+            $logs[] = ['label' => 'Cek .env', 'code' => 0, 'output' => '.env sudah ada (tidak ditimpa).'];
         }
 
-        if (readEnvValue($envPath, 'APP_KEY') === '') {
-            $run('Generate APP_KEY', "{$phpBin} artisan key:generate --force");
-        }
-        $run('Migrasi Database', "{$phpBin} artisan migrate --force");
-        $run('Seed Superadmin Awal', "{$phpBin} artisan db:seed --force");
-        $run('Storage Link', "{$phpBin} artisan storage:link");
-        $run('Optimize Cache', "{$phpBin} artisan optimize:clear && {$phpBin} artisan config:cache && {$phpBin} artisan route:cache && {$phpBin} artisan view:cache");
+        $logs[] = array_merge(['label' => 'Migrasi Database'], runArtisan($basePath, 'migrate', ['--force' => true]));
+        $logs[] = array_merge(['label' => 'Seed Superadmin Awal'], runArtisan($basePath, 'db:seed', ['--force' => true]));
+        $logs[] = array_merge(['label' => 'Bersihkan Cache'], runArtisan($basePath, 'optimize:clear'));
     }
 
-    if ($action === 'git_pull') {
-        $repoUrl = 'https://github.com/Frhstaaa/tes.git';
-        $safeBase = escapeshellarg($basePath);
-        $run('Git Safe Directory', "{$gitBin} config --global --add safe.directory {$safeBase}");
-
-        if (! is_dir($basePath . '/.git')) {
-            $run('Inisialisasi Git & Remote', "{$gitBin} init && {$gitBin} branch -M main && {$gitBin} remote add origin {$repoUrl}");
-        }
-
-        $run('Fetch & Pull dari GitHub (origin main)', "{$gitBin} fetch origin main && {$gitBin} pull origin main --ff-only");
-    }
-
-    if ($action === 'update_app') {
-        if (is_file($basePath . '/composer.json')) {
-            $run('Update Backend (Composer)', "{$composerBin} install --no-dev --optimize-autoloader --no-interaction");
-        }
-        $hasNpm = runShell('command -v npm || which npm', $basePath);
-        if ($hasNpm['code'] === 0 && is_file($basePath . '/package.json')) {
-            $run('Build Frontend (npm install & build)', "{$npmBin} install && {$npmBin} run build");
-        } else {
-            $logs[] = ['label' => 'Frontend Build', 'code' => 0, 'output' => 'npm tidak ditemukan di server; menggunakan folder public/build/ dari GitHub/ZIP.'];
-        }
-        $run('Migrasi Database', "{$phpBin} artisan migrate --force");
-        $run('Refresh Cache Laravel', "{$phpBin} artisan optimize:clear && {$phpBin} artisan config:cache && {$phpBin} artisan route:cache && {$phpBin} artisan view:cache");
+    if ($action === 'github_update') {
+        $logs[] = array_merge(
+            ['label' => 'Unduh & Ekstrak Kode Terbaru dari GitHub (Frhstaaa/tes)'],
+            downloadAndExtractGithubZip($basePath, 'https://github.com/Frhstaaa/tes/archive/refs/heads/main.zip')
+        );
+        $logs[] = array_merge(['label' => 'Migrasi Database'], runArtisan($basePath, 'migrate', ['--force' => true]));
+        $logs[] = array_merge(['label' => 'Bersihkan Cache'], runArtisan($basePath, 'optimize:clear'));
     }
 
     if ($action === 'clear_cache') {
-        $run('Bersihkan & Bangun Cache', "{$phpBin} artisan optimize:clear && {$phpBin} artisan config:cache && {$phpBin} artisan route:cache && {$phpBin} artisan view:cache");
+        $logs[] = array_merge(['label' => 'Bersihkan Cache Laravel'], runArtisan($basePath, 'optimize:clear'));
     }
 }
 
 $envExists = is_file($envPath);
-$gitBranch = is_dir($basePath . '/.git') ? runShell("{$gitBin} rev-parse --short HEAD", $basePath)['output'] : 'Belum terhubung ke Git';
+$storageWritable = is_writable($basePath . '/storage');
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Meetingkeun — Setup & Deploy CyberPanel</title>
+  <title>Meetingkeun — Setup &amp; Deploy CyberPanel</title>
   <style>
     :root {
       --paper: #F6F2E9; --paper-2: #ECE6D8; --ink: #16211C;
@@ -219,12 +226,12 @@ $gitBranch = is_dir($basePath . '/.git') ? runShell("{$gitBin} rev-parse --short
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Meetingkeun — Setup & Deploy</h1>
-      <p>Panel deployment CyberPanel untuk <strong>meetingkeun.frahesta.com</strong></p>
+      <h1>Meetingkeun — Setup &amp; Update</h1>
+      <p>Panel deployment pure-PHP (tanpa butuh SSH/Terminal) untuk <strong>meetingkeun.frahesta.com</strong></p>
       <div>
         <span class="badge">PHP <?= htmlspecialchars(PHP_VERSION) ?></span>
         <span class="badge">.env: <?= $envExists ? 'Ada' : 'Belum ada' ?></span>
-        <span class="badge">Git HEAD: <?= htmlspecialchars($gitBranch) ?></span>
+        <span class="badge">storage writable: <?= $storageWritable ? 'Ya' : 'Tidak' ?></span>
       </div>
     </div>
 
@@ -239,7 +246,7 @@ $gitBranch = is_dir($basePath . '/.git') ? runShell("{$gitBin} rev-parse --short
       </div>
     <?php else: ?>
       <div class="card">
-        <h2>Aksi Deployment</h2>
+        <h2>Aksi Setup &amp; Update</h2>
         <div class="grid">
           <form method="post">
             <input type="hidden" name="token" value="<?= htmlspecialchars($providedToken) ?>" />
@@ -249,20 +256,14 @@ $gitBranch = is_dir($basePath . '/.git') ? runShell("{$gitBin} rev-parse --short
 
           <form method="post">
             <input type="hidden" name="token" value="<?= htmlspecialchars($providedToken) ?>" />
-            <input type="hidden" name="action" value="git_pull" />
-            <button type="submit" class="btn">2. Pull Terbaru dari GitHub</button>
-          </form>
-
-          <form method="post">
-            <input type="hidden" name="token" value="<?= htmlspecialchars($providedToken) ?>" />
-            <input type="hidden" name="action" value="update_app" />
-            <button type="submit" class="btn">3. Update Backend &amp; Frontend</button>
+            <input type="hidden" name="action" value="github_update" />
+            <button type="submit" class="btn">2. Update Terbaru dari GitHub</button>
           </form>
 
           <form method="post">
             <input type="hidden" name="token" value="<?= htmlspecialchars($providedToken) ?>" />
             <input type="hidden" name="action" value="clear_cache" />
-            <button type="submit" class="btn btn-danger">4. Refresh Cache Laravel</button>
+            <button type="submit" class="btn btn-danger">3. Bersihkan Cache Laravel</button>
           </form>
         </div>
       </div>
