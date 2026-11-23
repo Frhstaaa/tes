@@ -174,9 +174,9 @@ ENV;
             $logs[] = ['label' => 'Cek .env', 'code' => 0, 'output' => '.env sudah ada (tidak ditimpa).'];
         }
 
+        $logs[] = array_merge(['label' => 'Bersihkan Cache Lama'], runArtisan($basePath, 'optimize:clear'));
         $logs[] = array_merge(['label' => 'Migrasi Database'], runArtisan($basePath, 'migrate', ['--force' => true]));
         $logs[] = array_merge(['label' => 'Seed Superadmin Awal'], runArtisan($basePath, 'db:seed', ['--force' => true]));
-        $logs[] = array_merge(['label' => 'Bersihkan Cache'], runArtisan($basePath, 'optimize:clear'));
     }
 
     if ($action === 'github_update') {
