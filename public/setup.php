@@ -156,6 +156,7 @@ DB_PORT=3306
 DB_DATABASE=meet_meetingkeun
 DB_USERNAME=meet_meetingkeun
 DB_PASSWORD=23052003
+DB_COLLATION=utf8mb4_unicode_ci
 
 CACHE_STORE=database
 SESSION_DRIVER=database
