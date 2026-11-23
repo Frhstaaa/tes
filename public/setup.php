@@ -39,24 +39,41 @@ $authenticated = $providedToken !== '' && hash_equals($expectedToken, $providedT
 
 function runShell(string $cmd, string $cwd): array
 {
-    $descriptor = [
-        0 => ['pipe', 'r'],
-        1 => ['pipe', 'w'],
-        2 => ['pipe', 'w'],
-    ];
-    $process = proc_open($cmd, $descriptor, $pipes, $cwd);
-    if (! is_resource($process)) {
-        return ['code' => 1, 'output' => "Gagal menjalankan perintah: {$cmd}"];
+    if (function_exists('proc_open')) {
+        $descriptor = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+        $process = @proc_open($cmd, $descriptor, $pipes, $cwd);
+        if (is_resource($process)) {
+            fclose($pipes[0]);
+            $stdout = stream_get_contents($pipes[1]) ?: '';
+            $stderr = stream_get_contents($pipes[2]) ?: '';
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $code = proc_close($process);
+            return [
+                'code' => $code,
+                'output' => trim($stdout . ($stderr !== '' ? "\n" . $stderr : '')),
+            ];
+        }
     }
-    fclose($pipes[0]);
-    $stdout = stream_get_contents($pipes[1]) ?: '';
-    $stderr = stream_get_contents($pipes[2]) ?: '';
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $code = proc_close($process);
+
+    if (function_exists('exec')) {
+        $lines = [];
+        $code = 0;
+        $escapedCwd = escapeshellarg($cwd);
+        @exec("cd {$escapedCwd} && {$cmd} 2>&1", $lines, $code);
+        return [
+            'code' => $code,
+            'output' => trim(implode("\n", $lines)),
+        ];
+    }
+
     return [
-        'code' => $code,
-        'output' => trim($stdout . ($stderr !== '' ? "\n" . $stderr : '')),
+        'code' => 1,
+        'output' => 'Fungsi proc_open dan exec dinonaktifkan di php.ini server. Jalankan perintah lewat SSH/Terminal CyberPanel.',
     ];
 }
 
