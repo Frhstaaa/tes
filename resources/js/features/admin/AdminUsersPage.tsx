@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, KeyRound, Plus, Search, ShieldCheck, Trash2, UserCheck, Users, UserX } from 'lucide-react';
+import { Activity, ArrowRight, KeyRound, Plus, Power, Search, ShieldCheck, Trash2, UserCheck, Users, UserX, Video } from 'lucide-react';
 import { api, ensureCsrfCookie, extractErrorMessage } from '@/lib/api';
-import type { AdminUser, AuditLogEntry, UserRole } from '@/types';
+import type { AdminMeetingEntry, AdminUser, AuditLogEntry, UserRole } from '@/types';
 import { useAuth } from '@/features/auth/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -26,7 +27,7 @@ export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const pushToast = useToastStore((s) => s.push);
 
-  const [activeTab, setActiveTab] = useState<'users' | 'audit'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'meetings' | 'audit'>('users');
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
@@ -60,6 +61,35 @@ export function AdminUsersPage() {
       return res.data.logs;
     },
     enabled: activeTab === 'audit',
+  });
+
+  const meetingsQuery = useQuery<{
+    meetings: AdminMeetingEntry[];
+    stats: { live: number; scheduled: number; active_participants: number };
+  }>({
+    queryKey: ['admin', 'meetings'],
+    queryFn: async () => {
+      const res = await api.get<{
+        meetings: AdminMeetingEntry[];
+        stats: { live: number; scheduled: number; active_participants: number };
+      }>('/admin/meetings');
+      return res.data;
+    },
+    refetchInterval: activeTab === 'meetings' ? 5000 : false,
+  });
+
+  const endMeetingMutation = useMutation({
+    mutationFn: async (code: string) => {
+      await ensureCsrfCookie();
+      await api.post(`/meetings/${code}/end`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'meetings'] });
+      pushToast('Meeting berhasil diakhiri.', 'default');
+    },
+    onError: (err) => {
+      pushToast(extractErrorMessage(err, 'Gagal mengakhiri meeting.'), 'danger');
+    },
   });
 
   const createMutation = useMutation({
@@ -179,7 +209,7 @@ export function AdminUsersPage() {
       </section>
 
       {/* Tab Switcher */}
-      <div className="inline-flex rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)] p-1">
+      <div className="flex flex-wrap gap-1 rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)] p-1 w-fit">
         <button
           type="button"
           onClick={() => setActiveTab('users')}
@@ -191,6 +221,23 @@ export function AdminUsersPage() {
         >
           <Users className="h-4 w-4" strokeWidth={1.75} />
           <span>Pengguna</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('meetings')}
+          className={`inline-flex min-h-[38px] cursor-pointer items-center gap-2 rounded-[8px] px-4 text-sm font-medium transition-colors ${
+            activeTab === 'meetings'
+              ? 'border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]'
+              : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
+          }`}
+        >
+          <Video className="h-4 w-4" strokeWidth={1.75} />
+          <span>Pantau Meeting</span>
+          {(meetingsQuery.data?.stats.live ?? 0) > 0 && (
+            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--clay-bright)] px-1.5 font-mono text-[11px] font-semibold text-[#F6F2E9]">
+              {meetingsQuery.data?.stats.live}
+            </span>
+          )}
         </button>
         <button
           type="button"
@@ -206,7 +253,87 @@ export function AdminUsersPage() {
         </button>
       </div>
 
-      {activeTab === 'audit' ? (
+      {activeTab === 'meetings' ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4">
+              <span className="text-xs font-medium text-[var(--ink-soft)]">Sedang Live</span>
+              <p className="mt-1 font-mono text-2xl font-semibold text-[var(--clay-bright)]">
+                {meetingsQuery.data?.stats.live ?? 0}
+              </p>
+            </div>
+            <div className="rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4">
+              <span className="text-xs font-medium text-[var(--ink-soft)]">Terjadwal</span>
+              <p className="mt-1 font-mono text-2xl font-semibold">
+                {meetingsQuery.data?.stats.scheduled ?? 0}
+              </p>
+            </div>
+            <div className="rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4">
+              <span className="text-xs font-medium text-[var(--ink-soft)]">Peserta Aktif</span>
+              <p className="mt-1 font-mono text-2xl font-semibold text-[var(--moss)] dark:text-[var(--moss-light)]">
+                {meetingsQuery.data?.stats.active_participants ?? 0}
+              </p>
+            </div>
+          </div>
+
+          {(meetingsQuery.data?.meetings ?? []).length === 0 ? (
+            <div className="rounded-[12px] border border-dashed border-[var(--line)] p-8 text-center text-sm text-[var(--ink-soft)]">
+              Belum ada ruang meeting yang sedang berlangsung atau terjadwal.
+            </div>
+          ) : (
+            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {(meetingsQuery.data?.meetings ?? []).map((m) => (
+                <li
+                  key={m.id}
+                  className="flex flex-col justify-between rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {m.status === 'live' ? (
+                        <Chip tone="moss">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--clay-bright)]" />
+                          Sedang berlangsung
+                        </Chip>
+                      ) : (
+                        <Chip tone="neutral">Terjadwal</Chip>
+                      )}
+                      {m.locked && <Chip tone="clay">Terkunci</Chip>}
+                      <span className="font-mono text-xs text-[var(--ink-soft)]">{m.code}</span>
+                    </div>
+                    <h3 className="truncate font-display text-lg font-semibold">{m.title}</h3>
+                    <p className="text-xs text-[var(--ink-soft)]">
+                      Host: <strong className="text-[var(--ink)]">{m.host?.name ?? '-'}</strong> ·{' '}
+                      <span className="font-mono">{m.active_participants_count} aktif</span>
+                      {m.waiting_participants_count > 0 && (
+                        <> · <span className="font-mono text-[var(--clay)]">{m.waiting_participants_count} menunggu</span></>
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-2">
+                    <Link to={`/m/${m.code}`} className="flex-1">
+                      <Button variant="primary" className="w-full">
+                        <span>Masuk sebagai Moderator</span>
+                        <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      title="Akhiri ruang ini"
+                      aria-label={`Akhiri ${m.title}`}
+                      onClick={() => endMeetingMutation.mutate(m.code)}
+                      disabled={endMeetingMutation.isPending}
+                    >
+                      <Power className="h-4 w-4 text-[var(--clay)]" strokeWidth={1.75} />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : activeTab === 'audit' ? (
         <div className="overflow-hidden rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/30">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-[var(--line)] bg-[var(--paper-2)]/70 text-xs uppercase tracking-wider text-[var(--ink-soft)]">

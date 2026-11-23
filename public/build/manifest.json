@@ -1,28 +1,28 @@
 {
-  "_useRoomSessionStore-q7pd030y.js": {
-    "file": "assets/useRoomSessionStore-q7pd030y.js",
+  "_useRoomSessionStore-Cgi4O7OO.js": {
+    "file": "assets/useRoomSessionStore-Cgi4O7OO.js",
     "name": "useRoomSessionStore",
     "imports": [
       "resources/js/main.tsx"
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-CaCsEriB.css",
+    "file": "assets/app-C_9qCL4O.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/features/prejoin/PrejoinPage.tsx": {
-    "file": "assets/PrejoinPage-CTgQF6jr.js",
+    "file": "assets/PrejoinPage-ChmdmidZ.js",
     "name": "PrejoinPage",
     "src": "resources/js/features/prejoin/PrejoinPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/main.tsx",
-      "_useRoomSessionStore-q7pd030y.js"
+      "_useRoomSessionStore-Cgi4O7OO.js"
     ]
   },
   "resources/js/features/room/FinishedPage.tsx": {
-    "file": "assets/FinishedPage-CWEYt84R.js",
+    "file": "assets/FinishedPage-BovmWRfe.js",
     "name": "FinishedPage",
     "src": "resources/js/features/room/FinishedPage.tsx",
     "isDynamicEntry": true,
@@ -31,17 +31,17 @@
     ]
   },
   "resources/js/features/room/JitsiRoomPage.tsx": {
-    "file": "assets/JitsiRoomPage-OtvR2UPE.js",
+    "file": "assets/JitsiRoomPage-DojCTtwF.js",
     "name": "JitsiRoomPage",
     "src": "resources/js/features/room/JitsiRoomPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/main.tsx",
-      "_useRoomSessionStore-q7pd030y.js"
+      "_useRoomSessionStore-Cgi4O7OO.js"
     ]
   },
   "resources/js/main.tsx": {
-    "file": "assets/main-CVSuqPGl.js",
+    "file": "assets/main-C06ZVsFW.js",
     "name": "main",
     "src": "resources/js/main.tsx",
     "isEntry": true,

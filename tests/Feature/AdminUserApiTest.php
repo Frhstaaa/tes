@@ -83,4 +83,37 @@ class AdminUserApiTest extends TestCase
             ->deleteJson("/api/admin/users/{$userId}")
             ->assertOk();
     }
+
+    public function test_superadmin_can_monitor_and_join_any_live_meeting(): void
+    {
+        $admin = User::factory()->create(['role' => 'superadmin', 'is_active' => true]);
+        $host = User::factory()->create(['role' => 'user', 'is_active' => true]);
+
+        $meeting = \App\Models\Meeting::create([
+            'code' => \App\Models\Meeting::generateUniqueCode(),
+            'host_id' => $host->id,
+            'title' => 'Rapat Divisi',
+            'type' => 'instant',
+            'status' => 'live',
+            'lobby_enabled' => true,
+            'locked' => true,
+            'started_at' => now(),
+        ]);
+
+        // Monitor endpoint lists the live meeting
+        $this->actingAs($admin)
+            ->getJson('/api/admin/meetings')
+            ->assertOk()
+            ->assertJsonPath('stats.live', 1)
+            ->assertJsonPath('meetings.0.code', $meeting->code);
+
+        // Superadmin can join even locked + lobby room without passcode/captcha as moderator
+        $this->actingAs($admin)
+            ->postJson("/api/meetings/{$meeting->code}/join", [
+                'display_name' => 'Superadmin',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'admitted')
+            ->assertJsonPath('role', 'host');
+    }
 }

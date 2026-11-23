@@ -39,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users', [AdminUserController::class, 'store']);
         Route::patch('/users/{id}', [AdminUserController::class, 'update']);
         Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+        Route::get('/meetings', [AdminUserController::class, 'meetings']);
         Route::get('/audit-logs', [AdminUserController::class, 'auditLogs']);
     });
 });

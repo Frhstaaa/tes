@@ -101,9 +101,10 @@ class MeetingController extends Controller
         }
 
         $user = $request->user('sanctum');
+        $isSuperadmin = $user?->isSuperadmin() ?? false;
 
         return response()->json([
-            'meeting' => $this->formatMeeting($meeting, $user?->id),
+            'meeting' => $this->formatMeeting($meeting, $user?->id, $isSuperadmin),
         ]);
     }
 
@@ -180,7 +181,8 @@ class MeetingController extends Controller
         }
 
         $user = $request->user('sanctum');
-        $isHost = $user && $user->id === $meeting->host_id;
+        $isSuperadmin = $user?->isSuperadmin() ?? false;
+        $isHost = ($user && $user->id === $meeting->host_id) || $isSuperadmin;
 
         $validated = $request->validate([
             'display_name' => ['required', 'string', 'min:1', 'max:60'],
@@ -228,6 +230,10 @@ class MeetingController extends Controller
             'status' => $status,
             'joined_at' => $status === 'admitted' ? now() : null,
         ]);
+
+        if ($isSuperadmin && $user && $user->id !== $meeting->host_id) {
+            AuditLog::record('admin.meeting.joined', $user->id, 'meeting', $meeting->code, [], $request);
+        }
 
         if ($status === 'admitted' && $meeting->status === 'scheduled') {
             $meeting->update([
@@ -533,7 +539,7 @@ class MeetingController extends Controller
         ]);
     }
 
-    private function formatMeeting(Meeting $meeting, ?int $currentUserId): array
+    private function formatMeeting(Meeting $meeting, ?int $currentUserId, bool $isSuperadmin = false): array
     {
         return [
             'id' => $meeting->id,
@@ -551,7 +557,7 @@ class MeetingController extends Controller
             'ended_at' => $meeting->ended_at?->toIso8601String(),
             'created_at' => $meeting->created_at?->toIso8601String(),
             'host_name' => $meeting->relationLoaded('host') ? $meeting->host?->name : null,
-            'is_host' => $currentUserId !== null && $currentUserId === $meeting->host_id,
+            'is_host' => $isSuperadmin || ($currentUserId !== null && $currentUserId === $meeting->host_id),
             'participant_count' => $meeting->participant_count ?? null,
         ];
     }

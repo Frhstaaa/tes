@@ -9,12 +9,12 @@ class MeetingPolicy
 {
     public function manage(User $user, Meeting $meeting): bool
     {
-        return $user->id === $meeting->host_id;
+        return $user->isSuperadmin() || $user->id === $meeting->host_id;
     }
 
     public function moderate(User $user, Meeting $meeting): bool
     {
-        if ($user->id === $meeting->host_id) {
+        if ($user->isSuperadmin() || $user->id === $meeting->host_id) {
             return true;
         }
 

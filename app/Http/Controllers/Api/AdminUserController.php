@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\Meeting;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -160,6 +161,54 @@ class AdminUserController extends Controller
 
         return response()->json([
             'logs' => $logs,
+        ]);
+    }
+
+    public function meetings(): JsonResponse
+    {
+        $meetings = Meeting::query()
+            ->with('host:id,name,email')
+            ->withCount([
+                'participants as active_participants_count' => function ($q) {
+                    $q->where('status', 'admitted')->whereNull('left_at');
+                },
+                'participants as waiting_participants_count' => function ($q) {
+                    $q->where('status', 'waiting');
+                },
+            ])
+            ->whereIn('status', ['live', 'scheduled'])
+            ->orderByRaw("CASE WHEN status = 'live' THEN 0 ELSE 1 END")
+            ->orderByDesc('started_at')
+            ->orderBy('scheduled_at')
+            ->limit(100)
+            ->get()
+            ->map(fn (Meeting $m) => [
+                'id' => $m->id,
+                'code' => $m->code,
+                'title' => $m->title,
+                'type' => $m->type,
+                'status' => $m->status,
+                'locked' => $m->locked,
+                'lobby_enabled' => $m->lobby_enabled,
+                'requires_passcode' => $m->hasPasscode(),
+                'started_at' => $m->started_at?->toIso8601String(),
+                'scheduled_at' => $m->scheduled_at?->toIso8601String(),
+                'active_participants_count' => $m->active_participants_count,
+                'waiting_participants_count' => $m->waiting_participants_count,
+                'host' => $m->host ? [
+                    'id' => $m->host->id,
+                    'name' => $m->host->name,
+                    'email' => $m->host->email,
+                ] : null,
+            ]);
+
+        return response()->json([
+            'meetings' => $meetings,
+            'stats' => [
+                'live' => $meetings->where('status', 'live')->count(),
+                'scheduled' => $meetings->where('status', 'scheduled')->count(),
+                'active_participants' => $meetings->sum('active_participants_count'),
+            ],
         ]);
     }
 

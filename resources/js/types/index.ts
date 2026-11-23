@@ -11,6 +11,26 @@ export interface User {
   created_at: string;
 }
 
+export interface AdminMeetingEntry {
+  id: number;
+  code: string;
+  title: string;
+  type: MeetingType;
+  status: MeetingStatus;
+  locked: boolean;
+  lobby_enabled: boolean;
+  requires_passcode: boolean;
+  started_at: string | null;
+  scheduled_at: string | null;
+  active_participants_count: number;
+  waiting_participants_count: number;
+  host: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
+}
+
 export interface AuditLogEntry {
   id: number;
   action: string;
