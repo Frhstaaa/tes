@@ -192,6 +192,11 @@ ENV;
     if ($action === 'clear_cache') {
         $logs[] = array_merge(['label' => 'Bersihkan Cache Laravel'], runArtisan($basePath, 'optimize:clear'));
     }
+
+    if ($action === 'migrate_fresh') {
+        $logs[] = array_merge(['label' => 'Bersihkan Cache Lama'], runArtisan($basePath, 'optimize:clear'));
+        $logs[] = array_merge(['label' => 'Reset & Migrasi Ulang + Seed'], runArtisan($basePath, 'migrate:fresh', ['--force' => true, '--seed' => true]));
+    }
 }
 
 $envExists = is_file($envPath);
@@ -264,7 +269,13 @@ $storageWritable = is_writable($basePath . '/storage');
           <form method="post">
             <input type="hidden" name="token" value="<?= htmlspecialchars($providedToken) ?>" />
             <input type="hidden" name="action" value="clear_cache" />
-            <button type="submit" class="btn btn-danger">3. Bersihkan Cache Laravel</button>
+            <button type="submit" class="btn">3. Bersihkan Cache Laravel</button>
+          </form>
+
+          <form method="post" onsubmit="return confirm('Semua tabel di database akan di-reset dan dibuat ulang. Lanjutkan?');">
+            <input type="hidden" name="token" value="<?= htmlspecialchars($providedToken) ?>" />
+            <input type="hidden" name="action" value="migrate_fresh" />
+            <button type="submit" class="btn btn-danger">4. Reset &amp; Migrasi Ulang (Fresh)</button>
           </form>
         </div>
       </div>
