@@ -7,7 +7,7 @@ Route::match(['get', 'post'], '/_setup', function () {
     abort_unless(is_file($file), 404);
     require $file;
     exit;
-});
+})->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
 Route::get('/{any?}', function () {
     return view('app');
