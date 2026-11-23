@@ -176,4 +176,20 @@ class MeetingApiTest extends TestCase
         $decoded = JWT::decode($statusRes->json('jwt'), new Key(config('jitsi.app_secret'), 'HS256'));
         $this->assertFalse($decoded->context->user->moderator);
     }
+
+    public function test_scheduled_meeting_converts_utc_iso_to_app_timezone(): void
+    {
+        config(['app.timezone' => 'Asia/Jakarta']);
+        date_default_timezone_set('Asia/Jakarta');
+
+        $host = User::factory()->create();
+        $res = $this->actingAs($host)->postJson('/api/meetings', [
+            'type' => 'scheduled',
+            'title' => 'Rapat Siang',
+            'scheduled_at' => '2026-11-24T07:00:00.000Z',
+        ]);
+
+        $res->assertCreated()
+            ->assertJsonPath('meeting.scheduled_at', '2026-11-24T14:00:00+07:00');
+    }
 }

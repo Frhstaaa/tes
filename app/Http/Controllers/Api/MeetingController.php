@@ -10,6 +10,7 @@ use App\Services\JitsiJwtService;
 use App\Services\NumericCaptchaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -65,6 +66,10 @@ class MeetingController extends Controller
             ? 'Meeting Cepat'
             : 'Meeting Terjadwal';
 
+        $scheduledAt = $type === 'scheduled' && ! empty($validated['scheduled_at'])
+            ? Carbon::parse($validated['scheduled_at'])->setTimezone(config('app.timezone'))
+            : null;
+
         $meeting = Meeting::create([
             'code' => Meeting::generateUniqueCode(),
             'host_id' => $request->user()->id,
@@ -72,7 +77,7 @@ class MeetingController extends Controller
             'description' => $validated['description'] ?? null,
             'type' => $type,
             'status' => $type === 'instant' ? 'live' : 'scheduled',
-            'scheduled_at' => $type === 'scheduled' ? $validated['scheduled_at'] : null,
+            'scheduled_at' => $scheduledAt,
             'duration_minutes' => $validated['duration_minutes'] ?? 60,
             'passcode_hash' => ! empty($validated['passcode']) ? Hash::make($validated['passcode']) : null,
             'lobby_enabled' => $validated['lobby_enabled'] ?? ($type === 'scheduled'),
@@ -123,13 +128,18 @@ class MeetingController extends Controller
             $meeting->passcode_hash = Hash::make($validated['passcode']);
         }
 
-        $meeting->fill(collect($validated)->only([
+        $data = collect($validated)->only([
             'title',
             'description',
-            'scheduled_at',
             'duration_minutes',
             'lobby_enabled',
-        ])->toArray());
+        ])->toArray();
+
+        if (! empty($validated['scheduled_at'])) {
+            $data['scheduled_at'] = Carbon::parse($validated['scheduled_at'])->setTimezone(config('app.timezone'));
+        }
+
+        $meeting->fill($data);
         $meeting->save();
 
         return response()->json([
