@@ -245,7 +245,7 @@ ENV;
         if (! file_exists($basePath . '/public/storage')) {
             $logs[] = array_merge(['label' => 'Tautkan Storage Publik'], runArtisan($basePath, 'storage:link'));
         }
-        $logs[] = array_merge(['label' => 'Segarkan Cache Aplikasi'], runArtisan($basePath, 'optimize:clear'));
+        $logs[] = array_merge(['label' => 'Optimalkan Cache Produksi (Config/Route/View)'], runArtisan($basePath, 'optimize'));
     }
 
     if ($action === 'clear_cache') {

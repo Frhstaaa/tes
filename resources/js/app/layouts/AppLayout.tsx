@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Home, LogOut, ShieldCheck, User as UserIcon, Video } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -16,6 +17,15 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { user, logout, isLoggingOut } = useAuth();
   const isSuperadmin = user?.role === 'superadmin';
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void import('@/features/meetings/SchedulePage');
+      void import('@/features/history/HistoryPage');
+      void import('@/features/auth/AccountPage');
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -129,7 +139,7 @@ export function AppLayout() {
         aria-label="Navigasi bawah"
         className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] md:hidden"
       >
-        <div className="mx-auto grid max-w-md grid-cols-4 rounded-full border border-[#E2EFEC] bg-white/95 px-2 py-1.5 shadow-[0_10px_30px_rgba(15,23,42,0.09)] backdrop-blur-md dark:border-[#243832] dark:bg-[#172420]/95">
+        <div className="mx-auto grid max-w-md transform-gpu grid-cols-4 rounded-full border border-[#E2EFEC] bg-white/95 px-2 py-1.5 shadow-[0_10px_30px_rgba(15,23,42,0.09)] backdrop-blur-md dark:border-[#243832] dark:bg-[#172420]/95">
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
