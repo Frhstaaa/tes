@@ -129,7 +129,7 @@ export function AppLayout() {
           </button>
         </div>
 
-        <div className="mx-auto w-full max-w-2xl px-5 py-4 md:max-w-5xl md:px-10 md:py-8 lg:px-12">
+        <div className="mx-auto w-full max-w-2xl px-5 py-4 md:max-w-none md:px-10 md:py-8 lg:px-12">
           <Outlet />
         </div>
       </main>
