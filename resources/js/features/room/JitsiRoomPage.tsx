@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
 import { BrandLogo } from '@/components/BrandLogo';
 import { useToastStore } from '@/stores/useToastStore';
-import type { MeetingParticipant } from '@/types';
+import type { MeetingParticipant, ParticipantRole } from '@/types';
 
 export function JitsiRoomPage() {
   const { kode = '' } = useParams<{ kode: string }>();
@@ -29,9 +29,16 @@ export function JitsiRoomPage() {
   const [breakoutRoomName, setBreakoutRoomName] = useState('');
   const [inBreakoutRoom, setInBreakoutRoom] = useState(false);
   const [mainRoomJid, setMainRoomJid] = useState('');
+  const [myRole, setMyRole] = useState<ParticipantRole>(session?.role ?? 'guest');
   const [breakoutRooms, setBreakoutRooms] = useState<
     Array<{ id: string; jid: string; name: string; participantCount: number }>
   >([]);
+
+  useEffect(() => {
+    if (session?.role) {
+      setMyRole(session.role);
+    }
+  }, [session?.role]);
 
   const syncBreakoutRooms = useCallback((roomsInput: unknown) => {
     if (!roomsInput || typeof roomsInput !== 'object') return;
@@ -218,9 +225,11 @@ export function JitsiRoomPage() {
     const checkRoomStatus = async () => {
       if (document.hidden) return;
       try {
-        const res = await api.get<{ status: string; meeting_status: string }>(
-          `/meetings/${kode}/participants/${session.participantId}/status`
-        );
+        const res = await api.get<{
+          status: string;
+          meeting_status: string;
+          role?: ParticipantRole;
+        }>(`/meetings/${kode}/participants/${session.participantId}/status`);
         if (res.data.meeting_status === 'ended' || res.data.meeting_status === 'cancelled' || res.data.status === 'ended') {
           isEndingRef.current = true;
           apiRef.current?.dispose();
@@ -236,6 +245,14 @@ export function JitsiRoomPage() {
           clearSession();
           pushToast('Kamu dikeluarkan dari ruang oleh host.', 'danger');
           navigate('/', { replace: true });
+        } else if (res.data.role && res.data.role !== myRole) {
+          setMyRole(res.data.role);
+          pushToast(
+            res.data.role === 'cohost'
+              ? 'Kamu ditunjuk sebagai Co-moderator.'
+              : 'Hak Co-moderator kamu dicabut.',
+            res.data.role === 'cohost' ? 'success' : 'default'
+          );
         }
       } catch {
         // Ignore transient poll errors
@@ -257,7 +274,7 @@ export function JitsiRoomPage() {
   }, [session, kode, clearSession, navigate, pushToast]);
 
   // Poll host waiting list when moderator panel is open
-  const canModerate = session?.role === 'host' || session?.role === 'cohost';
+  const canModerate = myRole === 'host' || myRole === 'cohost';
 
   useEffect(() => {
     if (!session || !canModerate) return;
@@ -337,12 +354,31 @@ export function JitsiRoomPage() {
       const res = await api.post<{ participant: MeetingParticipant }>(
         `/meetings/${kode}/participants/${id}/cohost`
       );
+      const updated = res.data.participant;
       setActiveList((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, role: res.data.participant.role } : p))
+        prev.map((p) => (p.id === id ? { ...p, role: updated.role } : p))
       );
+
+      if (updated.role === 'cohost') {
+        try {
+          const jitsiParticipants = apiRef.current?.getParticipantsInfo?.() ?? [];
+          const targetName = updated.display_name.trim().toLowerCase();
+          const match = jitsiParticipants.find(
+            (jp) => jp.displayName?.trim().toLowerCase() === targetName
+          );
+          if (match?.participantId) {
+            apiRef.current?.executeCommand('grantModerator', match.participantId);
+          }
+        } catch {
+          // Best-effort Jitsi moderator grant
+        }
+      }
+
       pushToast(
-        res.data.participant.role === 'cohost' ? 'Dijadikan Co-host.' : 'Hak Co-host dicabut.',
-        'default'
+        updated.role === 'cohost'
+          ? `${updated.display_name} dijadikan Co-moderator.`
+          : `Hak Co-moderator ${updated.display_name} dicabut.`,
+        updated.role === 'cohost' ? 'success' : 'default'
       );
     } catch (err) {
       pushToast(extractErrorMessage(err, 'Gagal mengubah peran co-host.'), 'danger');

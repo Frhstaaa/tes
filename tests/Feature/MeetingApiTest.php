@@ -46,7 +46,7 @@ class MeetingApiTest extends TestCase
         $jwt = $joinResponse->json('jwt');
         $decoded = JWT::decode($jwt, new Key(config('jitsi.app_secret'), 'HS256'));
 
-        $this->assertSame($code, $decoded->room);
+        $this->assertSame('*', $decoded->room);
         $this->assertTrue($decoded->context->user->moderator);
         $this->assertSame('Tiyas', $decoded->context->user->name);
     }

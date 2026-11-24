@@ -23,7 +23,8 @@ class JitsiJwtService
             'aud' => 'jitsi',
             'iss' => (string) config('jitsi.app_id', 'meetingkeun'),
             'sub' => (string) config('jitsi.domain', 'meet.jit.si'),
-            'room' => $meeting->code,
+            // Moderators use wildcard room so Prosody preserves moderator rights inside dynamic breakout rooms
+            'room' => $participant->isModerator() ? '*' : $meeting->code,
             'iat' => $now,
             'nbf' => $now - 5,
             'exp' => $now + ($ttlMinutes * 60),
