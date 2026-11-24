@@ -94,6 +94,33 @@ export function JitsiRoomPage() {
             doNotFlipLocalVideo: true,
             startWithAudioMuted: session.startMutedAudio,
             startWithVideoMuted: session.startMutedVideo,
+            resolution: 720,
+            enableLayerSuspension: true,
+            maxFullResolutionParticipants: 2,
+            desktopSharingFrameRate: {
+              min: 5,
+              max: 15,
+            },
+            videoQuality: {
+              maxBitratesVideo: {
+                screenshare: 2500000,
+                VP8: {
+                  low: 200000,
+                  standard: 500000,
+                  high: 1500000,
+                  ssHigh: 2500000,
+                },
+                VP9: {
+                  low: 100000,
+                  standard: 300000,
+                  high: 1200000,
+                  ssHigh: 2500000,
+                },
+              },
+            },
+            testing: {
+              capScreenshareBitrate: 0,
+            },
             breakoutRooms: {
               hideAddRoomButton: false,
               hideAutoAssignButton: false,
