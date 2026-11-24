@@ -1,3 +1,4 @@
+import { Video } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 interface BrandLogoProps {
@@ -7,35 +8,32 @@ interface BrandLogoProps {
 }
 
 export function BrandLogo({ size = 'md', inverted = false, className }: BrandLogoProps) {
-  const tileSize = size === 'sm' ? 'h-7 w-7 rounded-[8px]' : 'h-8 w-8 rounded-[9px]';
-  const textSize = size === 'sm' ? 'text-lg' : 'text-xl';
+  const tileSize = size === 'sm' ? 'h-8 w-8 rounded-[10px]' : 'h-10 w-10 rounded-[12px]';
+  const iconSize = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
+  const textSize = size === 'sm' ? 'text-[17px]' : 'text-[19px]';
 
   return (
     <span className={cn('inline-flex items-center gap-2.5 select-none', className)}>
-      <svg
-        viewBox="0 0 64 64"
-        fill="none"
-        className={cn(tileSize, 'shrink-0')}
+      <span
+        className={cn(
+          tileSize,
+          'inline-flex shrink-0 items-center justify-center shadow-sm',
+          inverted
+            ? 'bg-white text-[#0B7A69]'
+            : 'bg-gradient-to-br from-[#10937F] to-[#086254] text-white'
+        )}
         aria-hidden="true"
       >
-        <rect
-          width="64"
-          height="64"
-          rx="16"
-          fill={inverted ? '#F6F2E9' : '#2E5E4E'}
-        />
-        <path
-          d="M16 42V29a6.5 6.5 0 0 1 13 0v13M29 42V29a6.5 6.5 0 0 1 13 0v13"
-          stroke={inverted ? '#16211C' : '#F6F2E9'}
-          strokeWidth="5.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="44" cy="17" r="5" fill="#D4552B" />
-      </svg>
-      <span className={cn('font-display font-bold tracking-[-0.035em]', textSize)}>
-        <span className={inverted ? 'text-[#F6F2E9]' : 'text-[var(--ink)]'}>meeting</span>
-        <span className={inverted ? 'text-[#8FC4AE]' : 'text-[#244B3E] dark:text-[#8FC4AE]'}>keun</span>
+        <Video className={cn(iconSize, 'fill-current')} strokeWidth={1.8} />
+      </span>
+      <span
+        className={cn(
+          'font-display font-bold tracking-[-0.03em]',
+          textSize,
+          inverted ? 'text-white' : 'text-[var(--ink)]'
+        )}
+      >
+        Meeting<span className={inverted ? 'text-[#A7F3D0]' : 'text-[#0B7A69] dark:text-[#5EEAD4]'}>Keun</span>
       </span>
     </span>
   );

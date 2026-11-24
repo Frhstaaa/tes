@@ -40,7 +40,7 @@ export function NumericCaptcha({
   }, [refreshSignal]);
 
   return (
-    <div className="space-y-2.5 rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-3">
+    <div className="space-y-2.5 rounded-[14px] border border-[var(--line)] bg-[var(--paper)] p-3.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-[var(--ink-soft)]">
           Cocokkan angka pada foto
@@ -57,7 +57,7 @@ export function NumericCaptcha({
         </button>
       </div>
 
-      <div className="flex items-center justify-center overflow-hidden rounded-[8px] border border-[var(--line)] bg-[#ECE6D8] p-1">
+      <div className="flex items-center justify-center overflow-hidden rounded-[10px] border border-[var(--line)] bg-[#E8F3F1] p-1 dark:bg-[#13201C]">
         {imageUrl ? (
           <img
             src={imageUrl}

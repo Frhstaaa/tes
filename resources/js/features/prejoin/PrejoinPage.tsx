@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Chip } from '@/components/ui/Chip';
 import { NumericCaptcha } from '@/components/ui/NumericCaptcha';
 import { BrandLogo } from '@/components/BrandLogo';
+import { PageWaves } from '@/components/PageWaves';
 import { cn } from '@/lib/cn';
 
 export function PrejoinPage() {
@@ -412,8 +413,9 @@ export function PrejoinPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--paper)] text-[var(--ink)]">
-      <header className="border-b border-[var(--line)] px-4 py-3 md:px-10">
+    <div className="relative flex min-h-dvh flex-col overflow-x-hidden bg-[var(--paper)] text-[var(--ink)]">
+      <PageWaves />
+      <header className="relative z-10 border-b border-[var(--line)] bg-white/75 px-4 py-3 backdrop-blur-md dark:bg-[#111B18]/80 md:px-10">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
           <Link
             to={user ? '/beranda' : '/'}
@@ -429,11 +431,11 @@ export function PrejoinPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-xl flex-1 p-4 pb-28 lg:grid lg:max-w-5xl lg:grid-cols-12 lg:items-start lg:gap-8 lg:px-10 lg:py-8">
+      <main className="relative z-10 mx-auto w-full max-w-xl flex-1 p-4 pb-28 lg:grid lg:max-w-5xl lg:grid-cols-12 lg:items-start lg:gap-8 lg:px-10 lg:py-8">
         {/* Left column (Preview & Toggles) */}
         <div className="space-y-4 lg:col-span-7">
           {/* Camera preview (4:5 on mobile, 16:10 on desktop) */}
-          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[16px] border border-[var(--line)] bg-[#16211C] sm:aspect-[16/10]">
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[20px] border border-[var(--line)] bg-[#0E1B18] shadow-[0_12px_32px_rgba(15,23,42,0.08)] sm:aspect-[16/10]">
             <video
               ref={videoRef}
               autoPlay
@@ -454,13 +456,13 @@ export function PrejoinPage() {
             {/* Live mic level bar */}
             {micOn && (
               <div
-                className="absolute bottom-3 left-3 flex items-center gap-2 rounded-[8px] bg-[#16211C]/80 px-2.5 py-1.5 text-xs text-[#F6F2E9]"
+                className="absolute bottom-3 left-3 flex items-center gap-2 rounded-[10px] bg-[#0E1B18]/80 px-2.5 py-1.5 text-xs text-white backdrop-blur-xs"
                 aria-hidden="true"
               >
-                <Mic className="h-3.5 w-3.5 text-[#8FC4AE]" strokeWidth={1.75} />
+                <Mic className="h-3.5 w-3.5 text-[#5EEAD4]" strokeWidth={1.75} />
                 <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/20">
                   <div
-                    className="h-full bg-[#8FC4AE] transition-all duration-75"
+                    className="h-full bg-[#5EEAD4] transition-all duration-75"
                     style={{ width: `${micLevel}%` }}
                   />
                 </div>
@@ -517,7 +519,7 @@ export function PrejoinPage() {
         </div>
 
         {/* Right column (Meeting Info & Form) */}
-        <div className="mt-5 space-y-5 lg:col-span-5 lg:mt-0 lg:rounded-[16px] lg:border lg:border-[var(--line)] lg:bg-[var(--paper-2)]/40 lg:p-6">
+        <div className="mt-5 space-y-5 rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-5 shadow-[0_10px_28px_rgba(15,23,42,0.05)] lg:col-span-5 lg:mt-0 lg:p-6">
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               {meeting.status === 'live' && <Chip tone="moss">Berlangsung</Chip>}
@@ -590,7 +592,7 @@ export function PrejoinPage() {
       </main>
 
       {/* Mobile sticky bottom join bar */}
-      <div className="fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[var(--paper)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--line)] bg-[var(--paper-2)]/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden">
         <div className="mx-auto max-w-xl">
           <Button
             type="submit"

@@ -56,7 +56,7 @@ export function AccountPage() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
         <form
           onSubmit={handleSave}
-          className="space-y-4 rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/40 p-5 md:col-span-7"
+          className="space-y-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)] md:col-span-7"
         >
           <Input
             label="Nama tampilan"
@@ -85,7 +85,7 @@ export function AccountPage() {
           <button
             type="button"
             onClick={toggle}
-            className="flex min-h-[52px] w-full cursor-pointer items-center justify-between rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/40 px-4 py-3 text-left transition-colors hover:bg-[var(--paper-2)]"
+            className="flex min-h-[54px] w-full cursor-pointer items-center justify-between rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] px-4 py-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition-colors hover:border-[var(--moss)]/40"
           >
             <span className="flex items-center gap-3 text-sm font-medium">
               {dark ? (

@@ -62,9 +62,9 @@ export function SchedulePage() {
           ))}
         </div>
       ) : meetings.length === 0 ? (
-        <div className="rounded-[12px] border border-dashed border-[var(--line)] p-8 text-center">
+        <div className="rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-8 text-center shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
           <p className="text-sm text-[var(--ink-soft)]">Belum ada meeting terjadwal.</p>
-          <Button variant="outline" className="mt-3" onClick={() => setSheetOpen(true)}>
+          <Button variant="outline" className="mt-4" onClick={() => setSheetOpen(true)}>
             Buat jadwal pertama
           </Button>
         </div>
@@ -73,7 +73,7 @@ export function SchedulePage() {
           {meetings.map((m) => (
             <li
               key={m.id}
-              className="flex flex-col justify-between rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4"
+              className="flex flex-col justify-between rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]"
             >
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">

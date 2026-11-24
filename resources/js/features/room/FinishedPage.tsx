@@ -2,6 +2,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { BrandLogo } from '@/components/BrandLogo';
+import { PageWaves } from '@/components/PageWaves';
 import { useAuth } from '@/features/auth/useAuth';
 
 export function FinishedPage() {
@@ -13,8 +14,9 @@ export function FinishedPage() {
   const minutes = durationMs ? Math.max(1, Math.round(durationMs / 60000)) : null;
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--paper)] p-6 text-center text-[var(--ink)]">
-      <div className="w-full max-w-sm space-y-6 rounded-[16px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-6 sm:p-8">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[var(--paper)] p-6 text-center text-[var(--ink)]">
+      <PageWaves />
+      <div className="relative z-10 w-full max-w-sm space-y-6 rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-6 shadow-[0_12px_32px_rgba(15,23,42,0.06)] sm:p-8">
         <div className="flex justify-center">
           <BrandLogo size="sm" />
         </div>

@@ -30,8 +30,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={resolvedType}
             className={cn(
-              'min-h-[44px] w-full rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)] px-3.5 py-2.5 text-[16px] text-[var(--ink)] placeholder:text-[var(--ink-soft)]/70 transition-colors duration-150',
-              'focus:border-[var(--moss)] focus:bg-[var(--paper)] focus:outline-none',
+              'min-h-[44px] w-full rounded-[13px] border border-[var(--line)] bg-[var(--paper-2)] px-3.5 py-2.5 text-[16px] text-[var(--ink)] placeholder:text-[var(--ink-soft)]/70 transition-colors duration-150',
+              'focus:border-[var(--moss)] focus:bg-[var(--paper-2)] focus:outline-none',
               isPassword && 'pr-11',
               error && 'border-[var(--clay)] focus:border-[var(--clay)]',
               className

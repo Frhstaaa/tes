@@ -102,7 +102,7 @@ export function JitsiRoomPage() {
           interfaceConfigOverwrite: {
             APP_NAME: 'Meetingkeun',
             NATIVE_APP_NAME: 'Meetingkeun',
-            DEFAULT_BACKGROUND: '#16211C',
+            DEFAULT_BACKGROUND: '#0E1B18',
             SHOW_JITSI_WATERMARK: false,
             HIDE_DEEP_LINKING_LOGO: true,
             SHOW_BRAND_WATERMARK: false,
@@ -458,15 +458,15 @@ export function JitsiRoomPage() {
   };
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-[#16211C] text-[#F6F2E9]">
+    <div className="relative h-dvh w-full overflow-hidden bg-[#0E1B18] text-white">
       {loadError ? (
         <div className="flex h-full flex-col items-center justify-center p-6 text-center">
           <BrandLogo size="sm" inverted className="mb-4" />
           <h1 className="font-display text-xl font-bold">Gagal memuat ruang</h1>
-          <p className="mt-2 max-w-sm text-sm text-[#A7B5AE]">{loadError}</p>
+          <p className="mt-2 max-w-sm text-sm text-[#94A3B8]">{loadError}</p>
           <Button
             variant="outline"
-            className="mt-5 border-[#2C3D34] text-[#F6F2E9]"
+            className="mt-5 border-[#233C36] bg-[#142622] text-white hover:bg-[#1B332E]"
             onClick={() => navigate(`/m/${kode}`, { replace: true })}
           >
             Kembali ke pra-join
@@ -482,12 +482,12 @@ export function JitsiRoomPage() {
             <Button
               variant="outline"
               onClick={() => setHostSheetOpen(true)}
-              className="border-[#2C3D34] bg-[#16211C]/90 text-[#F6F2E9] hover:bg-[#1E2C25]"
+              className="border-[#233C36] bg-[#0E1B18]/90 text-white backdrop-blur-xs hover:bg-[#142622]"
             >
-              <Shield className="h-4 w-4 text-[#C9A66B]" strokeWidth={1.75} />
+              <Shield className="h-4 w-4 text-[#5EEAD4]" strokeWidth={1.75} />
               <span>Panel Host</span>
               {waitingList.length > 0 && (
-                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4552B] px-1.5 font-mono text-xs text-[#F6F2E9]">
+                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4552B] px-1.5 font-mono text-xs text-white">
                   {waitingList.length}
                 </span>
               )}
@@ -497,7 +497,7 @@ export function JitsiRoomPage() {
             <Button
               variant="outline"
               onClick={handleReturnToMainRoom}
-              className="border-[#3F7D68] bg-[#2E5E4E]/95 text-[#F6F2E9] hover:bg-[#3F7D68]"
+              className="border-[#0D9488] bg-[#0B7A69]/95 text-white hover:bg-[#0D9488]"
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
               <span>Kembali ke Ruang Utama</span>

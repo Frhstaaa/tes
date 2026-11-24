@@ -2,42 +2,42 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --paper: #F6F2E9;
-  --paper-2: #ECE6D8;
-  --ink: #16211C;
-  --ink-soft: #4A5750;
-  --moss: #2E5E4E;
-  --moss-hover: #244B3E;
-  --moss-light: #8FC4AE;
-  --moss-fg: #F6F2E9;
+  --paper: #F2F8F7;
+  --paper-2: #FFFFFF;
+  --ink: #1E293B;
+  --ink-soft: #64748B;
+  --moss: #0B7A69;
+  --moss-hover: #086254;
+  --moss-light: #5EEAD4;
+  --moss-fg: #FFFFFF;
   --clay: #B8431E;
   --clay-hover: #9E3818;
   --clay-bright: #D4552B;
   --sand: #C9A66B;
-  --line: #D8D0BE;
+  --line: #DCEAE7;
 
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-sans: 'Instrument Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --radius-control: 10px;
-  --radius-sheet: 16px;
+  --radius-control: 13px;
+  --radius-sheet: 20px;
 }
 
 .dark {
-  --paper: #16211C;
-  --paper-2: #1E2C25;
-  --ink: #F6F2E9;
-  --ink-soft: #A7B5AE;
-  --moss: #3F7D68;
-  --moss-hover: #4C947C;
-  --moss-light: #8FC4AE;
-  --moss-fg: #F6F2E9;
+  --paper: #111B18;
+  --paper-2: #172420;
+  --ink: #F1F5F9;
+  --ink-soft: #94A3B8;
+  --moss: #0D9488;
+  --moss-hover: #0F766E;
+  --moss-light: #5EEAD4;
+  --moss-fg: #FFFFFF;
   --clay: #C94E26;
   --clay-hover: #D85B32;
   --clay-bright: #E0663E;
   --sand: #D4B47C;
-  --line: #2C3D34;
+  --line: #243832;
 }
 
 @layer base {

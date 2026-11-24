@@ -24,11 +24,11 @@ export function ToastContainer() {
               ease: motionTokens.easing.smooth,
             }}
             className={cn(
-              'pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3 rounded-[10px] border px-3.5 py-2.5 text-sm font-medium',
+              'pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3 rounded-[14px] border px-4 py-3 text-sm font-medium shadow-[0_12px_28px_rgba(15,23,42,0.16)]',
               toast.tone === 'danger'
-                ? 'border-[var(--clay)] bg-[var(--clay)] text-[#F6F2E9]'
+                ? 'border-[var(--clay)] bg-[var(--clay)] text-white'
                 : toast.tone === 'success'
-                  ? 'border-[var(--moss)] bg-[var(--moss)] text-[#F6F2E9]'
+                  ? 'border-[var(--moss)] bg-[var(--moss)] text-white'
                   : 'border-[var(--line)] bg-[var(--ink)] text-[var(--paper)]'
             )}
           >

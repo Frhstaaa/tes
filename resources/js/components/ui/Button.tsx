@@ -11,13 +11,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading = false, disabled, children, ...props }, ref) => {
     const base =
-      'inline-flex items-center justify-center gap-2 font-medium transition-colors duration-150 select-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed rounded-[10px]';
+      'inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 select-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed rounded-[13px]';
 
     const variants = {
-      primary: 'bg-[var(--moss)] text-[var(--moss-fg)] hover:bg-[var(--moss-hover)]',
-      outline: 'bg-transparent text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-2)]',
+      primary:
+        'bg-gradient-to-r from-[#0C7D6C] to-[#075D50] text-white shadow-[0_8px_20px_rgba(11,122,105,0.22)] hover:brightness-105',
+      outline:
+        'bg-[var(--paper-2)] text-[var(--ink)] border-[1.5px] border-[#0B7A69]/30 hover:border-[#0B7A69]/65 hover:bg-[#F5FBF9] dark:border-[#2C4A41] dark:hover:bg-[#1D2E29]',
       ghost: 'bg-transparent text-[var(--ink-soft)] hover:text-[var(--ink)] hover:bg-[var(--paper-2)]',
-      danger: 'bg-[var(--clay)] text-[#F6F2E9] hover:bg-[var(--clay-hover)]',
+      danger: 'bg-[var(--clay)] text-white hover:bg-[var(--clay-hover)]',
     };
 
     const sizes = {

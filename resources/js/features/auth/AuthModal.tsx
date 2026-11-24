@@ -128,7 +128,7 @@ export function AuthModal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: motionTokens.duration.fast }}
-            className="fixed inset-0 bg-[#16211C]/55 backdrop-blur-[2px]"
+            className="fixed inset-0 bg-[#0E1B18]/50 backdrop-blur-[2px]"
             onClick={handleClose}
           />
 
@@ -141,7 +141,7 @@ export function AuthModal() {
               duration: motionTokens.duration.normal,
               ease: motionTokens.easing.smooth,
             }}
-            className="relative z-10 w-full max-w-md rounded-t-[16px] sm:rounded-[16px] border border-[var(--line)] bg-[var(--paper)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-[var(--ink)] max-h-[92dvh] overflow-y-auto sm:p-6"
+            className="relative z-10 w-full max-w-md rounded-t-[20px] sm:rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-[var(--ink)] shadow-[0_24px_48px_rgba(15,23,42,0.16)] max-h-[92dvh] overflow-y-auto sm:p-6"
           >
             {/* Header */}
             <div className="mb-4 flex items-center justify-between gap-3">

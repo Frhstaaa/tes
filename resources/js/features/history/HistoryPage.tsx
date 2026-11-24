@@ -19,15 +19,15 @@ export function HistoryPage() {
           ))}
         </div>
       ) : meetings.length === 0 ? (
-        <div className="rounded-[12px] border border-dashed border-[var(--line)] p-8 text-center">
+        <div className="rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-8 text-center shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
           <p className="text-sm text-[var(--ink-soft)]">Belum ada riwayat meeting.</p>
         </div>
       ) : (
-        <ul className="divide-y divide-[var(--line)] rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/40 md:grid md:grid-cols-2 md:divide-y-0 md:gap-3 md:border-0 md:bg-transparent">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {meetings.map((m) => (
             <li
               key={m.id}
-              className="flex items-center justify-between gap-4 p-4 md:rounded-[12px] md:border md:border-[var(--line)] md:bg-[var(--paper-2)]/40"
+              className="flex items-center justify-between gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]"
             >
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
