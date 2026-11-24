@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
@@ -23,6 +24,16 @@ class AppServiceProvider extends ServiceProvider
 
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
+        }
+
+        if (config('database.default') === 'sqlite') {
+            try {
+                DB::statement('PRAGMA journal_mode=WAL;');
+                DB::statement('PRAGMA synchronous=NORMAL;');
+                DB::statement('PRAGMA busy_timeout=5000;');
+            } catch (\Throwable) {
+                // Ignore during early artisan bootstrap before DB file exists
+            }
         }
     }
 }

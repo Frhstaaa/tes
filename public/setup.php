@@ -453,6 +453,8 @@ $lastCommand = (string) ($_POST['command'] ?? '');
                 'php artisan about',
                 'php artisan migrate --force',
                 'php artisan optimize',
+                'php artisan octane:status',
+                'php artisan octane:reload',
                 'composer install --no-dev --optimize-autoloader',
                 'git status',
               ];

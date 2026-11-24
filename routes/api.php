@@ -6,8 +6,8 @@ use App\Http\Controllers\Api\CaptchaController;
 use App\Http\Controllers\Api\MeetingController;
 use Illuminate\Support\Facades\Route;
 
-// Numeric image CAPTCHA
-Route::get('/captcha', [CaptchaController::class, 'show'])->middleware('throttle:30,1');
+// Numeric image CAPTCHA (high limit for concurrent users behind shared NAT/Wi-Fi)
+Route::get('/captcha', [CaptchaController::class, 'show'])->middleware('throttle:120,1');
 
 // Public & rate-limited auth routes
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
@@ -46,6 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Public / optional-auth meeting join & info routes
 Route::get('/meetings/{code}', [MeetingController::class, 'show']);
-Route::post('/meetings/{code}/join', [MeetingController::class, 'join'])->middleware('throttle:10,1');
+Route::post('/meetings/{code}/join', [MeetingController::class, 'join'])->middleware('throttle:60,1');
 Route::get('/meetings/{code}/participants/{id}/status', [MeetingController::class, 'participantStatus']);
 Route::post('/meetings/{code}/leave', [MeetingController::class, 'leave']);
