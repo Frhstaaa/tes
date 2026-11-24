@@ -1,25 +1,25 @@
 {
-  "_Chip-B_e6-Pg5.js": {
-    "file": "assets/Chip-B_e6-Pg5.js",
+  "_Chip-gmWtwPD4.js": {
+    "file": "assets/Chip-gmWtwPD4.js",
     "name": "Chip",
     "imports": [
       "_query-DQFtpeQ6.js",
       "resources/js/main.tsx"
     ]
   },
-  "_NewMeetingSheet-DMj5FWH-.js": {
-    "file": "assets/NewMeetingSheet-DMj5FWH-.js",
+  "_NewMeetingSheet-CPd2a3u_.js": {
+    "file": "assets/NewMeetingSheet-CPd2a3u_.js",
     "name": "NewMeetingSheet",
     "imports": [
       "_query-DQFtpeQ6.js",
-      "_Sheet-BVrAFpUF.js",
+      "_Sheet-ZuhVzkTF.js",
       "resources/js/main.tsx",
-      "_useMeetings-RMyAzdhZ.js",
+      "_useMeetings-5KQUUhf0.js",
       "_react-vendor-WDTxjL6d.js"
     ]
   },
-  "_Sheet-BVrAFpUF.js": {
-    "file": "assets/Sheet-BVrAFpUF.js",
+  "_Sheet-ZuhVzkTF.js": {
+    "file": "assets/Sheet-ZuhVzkTF.js",
     "name": "Sheet",
     "imports": [
       "_query-DQFtpeQ6.js",
@@ -49,64 +49,64 @@
       "_query-DQFtpeQ6.js"
     ]
   },
-  "_useMeetings-RMyAzdhZ.js": {
-    "file": "assets/useMeetings-RMyAzdhZ.js",
+  "_useMeetings-5KQUUhf0.js": {
+    "file": "assets/useMeetings-5KQUUhf0.js",
     "name": "useMeetings",
     "imports": [
       "_query-DQFtpeQ6.js",
       "resources/js/main.tsx"
     ]
   },
-  "_useRoomSessionStore-CBe63_Px.js": {
-    "file": "assets/useRoomSessionStore-CBe63_Px.js",
+  "_useRoomSessionStore-CdZpnZJm.js": {
+    "file": "assets/useRoomSessionStore-CdZpnZJm.js",
     "name": "useRoomSessionStore",
     "imports": [
       "resources/js/main.tsx"
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-BE10rA2_.css",
+    "file": "assets/app-DKPgazbQ.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/features/admin/AdminUsersPage.tsx": {
-    "file": "assets/AdminUsersPage-64omkxzQ.js",
+    "file": "assets/AdminUsersPage-KNDvvLBQ.js",
     "name": "AdminUsersPage",
     "src": "resources/js/features/admin/AdminUsersPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_query-DQFtpeQ6.js",
       "resources/js/main.tsx",
-      "_Chip-B_e6-Pg5.js",
-      "_Sheet-BVrAFpUF.js",
+      "_Chip-gmWtwPD4.js",
+      "_Sheet-ZuhVzkTF.js",
       "_icons-CDPUoaxX.js",
       "_react-vendor-WDTxjL6d.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/auth/AccountPage.tsx": {
-    "file": "assets/AccountPage-RuK97kT7.js",
+    "file": "assets/AccountPage-CMLm99VJ.js",
     "name": "AccountPage",
     "src": "resources/js/features/auth/AccountPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_query-DQFtpeQ6.js",
       "resources/js/main.tsx",
-      "_Chip-B_e6-Pg5.js",
+      "_Chip-gmWtwPD4.js",
       "_react-vendor-WDTxjL6d.js",
       "_icons-CDPUoaxX.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/history/HistoryPage.tsx": {
-    "file": "assets/HistoryPage-sEGX1chI.js",
+    "file": "assets/HistoryPage-dSq_mO1L.js",
     "name": "HistoryPage",
     "src": "resources/js/features/history/HistoryPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_query-DQFtpeQ6.js",
-      "_Chip-B_e6-Pg5.js",
-      "_useMeetings-RMyAzdhZ.js",
+      "_Chip-gmWtwPD4.js",
+      "_useMeetings-5KQUUhf0.js",
       "resources/js/main.tsx",
       "_react-vendor-WDTxjL6d.js",
       "_motion-DMdQsqvA.js",
@@ -114,56 +114,56 @@
     ]
   },
   "resources/js/features/meetings/HomePage.tsx": {
-    "file": "assets/HomePage-BlP23JM7.js",
+    "file": "assets/HomePage-CGInVG24.js",
     "name": "HomePage",
     "src": "resources/js/features/meetings/HomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_query-DQFtpeQ6.js",
       "resources/js/main.tsx",
-      "_Sheet-BVrAFpUF.js",
-      "_Chip-B_e6-Pg5.js",
-      "_useMeetings-RMyAzdhZ.js",
-      "_NewMeetingSheet-DMj5FWH-.js",
+      "_Sheet-ZuhVzkTF.js",
+      "_Chip-gmWtwPD4.js",
+      "_useMeetings-5KQUUhf0.js",
+      "_NewMeetingSheet-CPd2a3u_.js",
       "_react-vendor-WDTxjL6d.js",
       "_icons-CDPUoaxX.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/meetings/SchedulePage.tsx": {
-    "file": "assets/SchedulePage-DBEo1T0V.js",
+    "file": "assets/SchedulePage-DDv5Bu2p.js",
     "name": "SchedulePage",
     "src": "resources/js/features/meetings/SchedulePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_query-DQFtpeQ6.js",
       "resources/js/main.tsx",
-      "_Chip-B_e6-Pg5.js",
-      "_useMeetings-RMyAzdhZ.js",
-      "_NewMeetingSheet-DMj5FWH-.js",
-      "_Sheet-BVrAFpUF.js",
+      "_Chip-gmWtwPD4.js",
+      "_useMeetings-5KQUUhf0.js",
+      "_NewMeetingSheet-CPd2a3u_.js",
+      "_Sheet-ZuhVzkTF.js",
       "_icons-CDPUoaxX.js",
       "_react-vendor-WDTxjL6d.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/prejoin/PrejoinPage.tsx": {
-    "file": "assets/PrejoinPage-CvQXeEuZ.js",
+    "file": "assets/PrejoinPage-BdxTGAGs.js",
     "name": "PrejoinPage",
     "src": "resources/js/features/prejoin/PrejoinPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_query-DQFtpeQ6.js",
       "resources/js/main.tsx",
-      "_useRoomSessionStore-CBe63_Px.js",
-      "_Chip-B_e6-Pg5.js",
+      "_useRoomSessionStore-CdZpnZJm.js",
+      "_Chip-gmWtwPD4.js",
       "_react-vendor-WDTxjL6d.js",
       "_icons-CDPUoaxX.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/room/FinishedPage.tsx": {
-    "file": "assets/FinishedPage-BI_m0LZi.js",
+    "file": "assets/FinishedPage-C8Dk5HKB.js",
     "name": "FinishedPage",
     "src": "resources/js/features/room/FinishedPage.tsx",
     "isDynamicEntry": true,
@@ -176,22 +176,22 @@
     ]
   },
   "resources/js/features/room/JitsiRoomPage.tsx": {
-    "file": "assets/JitsiRoomPage-t5iaAq5a.js",
+    "file": "assets/JitsiRoomPage-CpRNNcqd.js",
     "name": "JitsiRoomPage",
     "src": "resources/js/features/room/JitsiRoomPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_query-DQFtpeQ6.js",
-      "_useRoomSessionStore-CBe63_Px.js",
+      "_useRoomSessionStore-CdZpnZJm.js",
       "resources/js/main.tsx",
-      "_Sheet-BVrAFpUF.js",
+      "_Sheet-ZuhVzkTF.js",
       "_react-vendor-WDTxjL6d.js",
       "_icons-CDPUoaxX.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/main.tsx": {
-    "file": "assets/main-DtWATwWd.js",
+    "file": "assets/main-Dv85w-gk.js",
     "name": "main",
     "src": "resources/js/main.tsx",
     "isEntry": true,
