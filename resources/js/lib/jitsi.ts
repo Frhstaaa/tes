@@ -2,6 +2,7 @@ export interface JitsiMeetExternalAPIInstance {
   addListener: (event: string, listener: (...args: unknown[]) => void) => void;
   removeListener: (event: string, listener: (...args: unknown[]) => void) => void;
   executeCommand: (command: string, ...args: unknown[]) => void;
+  listBreakoutRooms?: () => Promise<Record<string, unknown>>;
   dispose: () => void;
 }
 

@@ -5,11 +5,22 @@ import { PublicLayout } from './layouts/PublicLayout';
 import { AppLayout } from './layouts/AppLayout';
 import { LandingPage } from '@/features/auth/LandingPage';
 import { useAuthModalStore, type AuthModalMode } from '@/stores/useAuthModalStore';
-import { HomePage } from '@/features/meetings/HomePage';
-import { SchedulePage } from '@/features/meetings/SchedulePage';
-import { HistoryPage } from '@/features/history/HistoryPage';
-import { AccountPage } from '@/features/auth/AccountPage';
-import { AdminUsersPage } from '@/features/admin/AdminUsersPage';
+
+const HomePage = lazy(() =>
+  import('@/features/meetings/HomePage').then((m) => ({ default: m.HomePage }))
+);
+const SchedulePage = lazy(() =>
+  import('@/features/meetings/SchedulePage').then((m) => ({ default: m.SchedulePage }))
+);
+const HistoryPage = lazy(() =>
+  import('@/features/history/HistoryPage').then((m) => ({ default: m.HistoryPage }))
+);
+const AccountPage = lazy(() =>
+  import('@/features/auth/AccountPage').then((m) => ({ default: m.AccountPage }))
+);
+const AdminUsersPage = lazy(() =>
+  import('@/features/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage }))
+);
 
 const PrejoinPage = lazy(() =>
   import('@/features/prejoin/PrejoinPage').then((m) => ({ default: m.PrejoinPage }))

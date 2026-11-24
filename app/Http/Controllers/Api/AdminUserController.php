@@ -32,13 +32,22 @@ class AdminUserController extends Controller
 
         $users = $query->get()->map(fn (User $u) => $this->formatAdminUser($u));
 
+        $statsRow = User::query()
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive,
+                SUM(CASE WHEN role = 'superadmin' THEN 1 ELSE 0 END) as superadmins
+            ")
+            ->first();
+
         return response()->json([
             'users' => $users,
             'stats' => [
-                'total' => User::count(),
-                'active' => User::where('is_active', true)->count(),
-                'inactive' => User::where('is_active', false)->count(),
-                'superadmins' => User::where('role', 'superadmin')->count(),
+                'total' => (int) ($statsRow->total ?? 0),
+                'active' => (int) ($statsRow->active ?? 0),
+                'inactive' => (int) ($statsRow->inactive ?? 0),
+                'superadmins' => (int) ($statsRow->superadmins ?? 0),
             ],
         ]);
     }

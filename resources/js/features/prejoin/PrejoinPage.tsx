@@ -20,6 +20,7 @@ export function PrejoinPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const setSession = useRoomSessionStore((s) => s.setSession);
+  const clearSession = useRoomSessionStore((s) => s.clearSession);
 
   const [displayName, setDisplayName] = useState(() => searchParams.get('u') ?? '');
   const [passcode, setPasscode] = useState('');
@@ -43,6 +44,10 @@ export function PrejoinPage() {
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
+    clearSession();
+  }, [clearSession]);
+
+  useEffect(() => {
     if (user?.name && !displayName) {
       setDisplayName(user.name);
     }
@@ -57,10 +62,19 @@ export function PrejoinPage() {
     retry: false,
   });
 
+  const isCountdownActive = Boolean(
+    meetingQuery.data &&
+      meetingQuery.data.status === 'scheduled' &&
+      !meetingQuery.data.is_host &&
+      meetingQuery.data.scheduled_at &&
+      new Date(meetingQuery.data.scheduled_at).getTime() - nowMs > 15 * 60 * 1000
+  );
+
   useEffect(() => {
+    if (!isCountdownActive) return;
     const id = window.setInterval(() => setNowMs(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [isCountdownActive]);
 
   // Camera & mic preview + live audio level
   useEffect(() => {
@@ -360,7 +374,13 @@ export function PrejoinPage() {
           </div>
           <Button
             variant="outline"
-            onClick={() => setWaitingParticipantId(null)}
+            onClick={() => {
+              const pid = waitingParticipantId;
+              setWaitingParticipantId(null);
+              if (pid) {
+                api.post(`/meetings/${kode}/leave`, { participant_id: pid }).catch(() => undefined);
+              }
+            }}
             className="w-full"
           >
             Batal

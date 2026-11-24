@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Check, Layers, Lock, Plus, Shield, Shuffle, Unlock, UserX, X } from 'lucide-react';
+import { ArrowLeft, Check, Layers, Lock, Plus, Shield, Shuffle, Unlock, UserX, X } from 'lucide-react';
 import { useRoomSessionStore } from '@/stores/useRoomSessionStore';
 import { loadJitsiExternalApi, type JitsiMeetExternalAPIInstance } from '@/lib/jitsi';
 import { api, extractErrorMessage } from '@/lib/api';
@@ -19,6 +19,7 @@ export function JitsiRoomPage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const apiRef = useRef<JitsiMeetExternalAPIInstance | null>(null);
   const isEndingRef = useRef(false);
+  const leaveTimerRef = useRef<number | null>(null);
 
   const [loadError, setLoadError] = useState('');
   const [hostSheetOpen, setHostSheetOpen] = useState(false);
@@ -26,11 +27,37 @@ export function JitsiRoomPage() {
   const [waitingList, setWaitingList] = useState<MeetingParticipant[]>([]);
   const [activeList, setActiveList] = useState<MeetingParticipant[]>([]);
   const [breakoutRoomName, setBreakoutRoomName] = useState('');
+  const [inBreakoutRoom, setInBreakoutRoom] = useState(false);
+  const [mainRoomJid, setMainRoomJid] = useState('');
   const [breakoutRooms, setBreakoutRooms] = useState<
     Array<{ id: string; jid: string; name: string; participantCount: number }>
   >([]);
 
+  const syncBreakoutRooms = useCallback((roomsInput: unknown) => {
+    if (!roomsInput || typeof roomsInput !== 'object') return;
+    const entries = Object.values(
+      roomsInput as Record<
+        string,
+        { id?: string; jid?: string; name?: string; participants?: Record<string, unknown>; isMainRoom?: boolean }
+      >
+    );
+    const main = entries.find((r) => r.isMainRoom && r.jid);
+    if (main?.jid) {
+      setMainRoomJid(main.jid);
+    }
+    const list = entries
+      .filter((r) => !r.isMainRoom && r.jid)
+      .map((r) => ({
+        id: r.id ?? r.jid ?? '',
+        jid: r.jid ?? '',
+        name: r.name || 'Breakout Room',
+        participantCount: r.participants ? Object.keys(r.participants).length : 0,
+      }));
+    setBreakoutRooms(list);
+  }, []);
+
   useEffect(() => {
+    if (isEndingRef.current) return;
     if (!session || session.code !== kode) {
       navigate(`/m/${kode}`, { replace: true });
       return;
@@ -111,6 +138,10 @@ export function JitsiRoomPage() {
         }
 
         const handleLeave = async () => {
+          if (leaveTimerRef.current) {
+            window.clearTimeout(leaveTimerRef.current);
+            leaveTimerRef.current = null;
+          }
           if (isEndingRef.current) return;
           isEndingRef.current = true;
           try {
@@ -128,25 +159,39 @@ export function JitsiRoomPage() {
           });
         };
 
-        instance.addListener('videoConferenceLeft', handleLeave);
+        instance.addListener('videoConferenceJoined', (payload: unknown) => {
+          // Cancel pending leave if we just transitioned into/out of a breakout room
+          if (leaveTimerRef.current) {
+            window.clearTimeout(leaveTimerRef.current);
+            leaveTimerRef.current = null;
+          }
+          const data = payload as { breakoutRoom?: boolean } | null;
+          setInBreakoutRoom(Boolean(data?.breakoutRoom));
+
+          if (typeof instance.listBreakoutRooms === 'function') {
+            instance
+              .listBreakoutRooms()
+              .then((rooms) => syncBreakoutRooms(rooms))
+              .catch(() => undefined);
+          }
+        });
+
+        instance.addListener('videoConferenceLeft', () => {
+          // Switching to/from a breakout room fires videoConferenceLeft before videoConferenceJoined.
+          // Defer leaving briefly so a breakout room transition can cancel it.
+          if (leaveTimerRef.current) {
+            window.clearTimeout(leaveTimerRef.current);
+          }
+          leaveTimerRef.current = window.setTimeout(() => {
+            handleLeave();
+          }, 1200);
+        });
+
         instance.addListener('readyToClose', handleLeave);
         instance.addListener('breakoutRoomsUpdated', (payload: unknown) => {
-          const data = payload as {
-            rooms?: Record<
-              string,
-              { id?: string; jid?: string; name?: string; participants?: Record<string, unknown>; isMainRoom?: boolean }
-            >;
-          } | null;
+          const data = payload as { rooms?: unknown } | null;
           if (!data?.rooms) return;
-          const list = Object.values(data.rooms)
-            .filter((r) => !r.isMainRoom && r.jid)
-            .map((r) => ({
-              id: r.id ?? r.jid ?? '',
-              jid: r.jid ?? '',
-              name: r.name || 'Breakout Room',
-              participantCount: r.participants ? Object.keys(r.participants).length : 0,
-            }));
-          setBreakoutRooms(list);
+          syncBreakoutRooms(data.rooms);
         });
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : 'Gagal memuat ruang meeting.');
@@ -157,21 +202,27 @@ export function JitsiRoomPage() {
 
     return () => {
       disposed = true;
+      if (leaveTimerRef.current) {
+        window.clearTimeout(leaveTimerRef.current);
+        leaveTimerRef.current = null;
+      }
       apiRef.current?.dispose();
       apiRef.current = null;
     };
-  }, [session, kode, navigate, clearSession]);
+  }, [session, kode, navigate, clearSession, syncBreakoutRooms]);
 
   // Poll meeting & participant status so guests/cohosts auto-exit when host ends or kicks them
   useEffect(() => {
     if (!session) return;
 
     const checkRoomStatus = async () => {
+      if (document.hidden) return;
       try {
         const res = await api.get<{ status: string; meeting_status: string }>(
           `/meetings/${kode}/participants/${session.participantId}/status`
         );
         if (res.data.meeting_status === 'ended' || res.data.meeting_status === 'cancelled' || res.data.status === 'ended') {
+          isEndingRef.current = true;
           apiRef.current?.dispose();
           apiRef.current = null;
           const durationMs = Date.now() - session.joinedAtMs;
@@ -179,6 +230,7 @@ export function JitsiRoomPage() {
           pushToast('Meeting telah diakhiri oleh host.', 'default');
           navigate(`/m/${kode}/selesai`, { replace: true, state: { durationMs } });
         } else if (res.data.status === 'kicked') {
+          isEndingRef.current = true;
           apiRef.current?.dispose();
           apiRef.current = null;
           clearSession();
@@ -190,8 +242,18 @@ export function JitsiRoomPage() {
       }
     };
 
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        checkRoomStatus();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
     const timer = window.setInterval(checkRoomStatus, 3500);
-    return () => window.clearInterval(timer);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.clearInterval(timer);
+    };
   }, [session, kode, clearSession, navigate, pushToast]);
 
   // Poll host waiting list when moderator panel is open
@@ -201,6 +263,7 @@ export function JitsiRoomPage() {
     if (!session || !canModerate) return;
 
     const fetchWaiting = async () => {
+      if (document.hidden) return;
       try {
         const res = await api.get<{
           waiting: MeetingParticipant[];
@@ -213,9 +276,19 @@ export function JitsiRoomPage() {
       }
     };
 
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        fetchWaiting();
+      }
+    };
+
     fetchWaiting();
+    document.addEventListener('visibilitychange', handleVisibility);
     const interval = window.setInterval(fetchWaiting, 4000);
-    return () => window.clearInterval(interval);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.clearInterval(interval);
+    };
   }, [session, kode, hostSheetOpen]);
 
   const handleToggleLock = async () => {
@@ -306,6 +379,19 @@ export function JitsiRoomPage() {
     }
   };
 
+  const handleReturnToMainRoom = () => {
+    try {
+      if (mainRoomJid) {
+        apiRef.current?.executeCommand('joinBreakoutRoom', mainRoomJid);
+      } else {
+        apiRef.current?.executeCommand('joinBreakoutRoom');
+      }
+      setHostSheetOpen(false);
+    } catch {
+      pushToast('Gagal kembali ke ruang utama.', 'danger');
+    }
+  };
+
   const handleCloseBreakout = (jid: string) => {
     try {
       apiRef.current?.executeCommand('closeBreakoutRoom', jid);
@@ -354,21 +440,33 @@ export function JitsiRoomPage() {
         <div ref={containerRef} className="h-full w-full" />
       )}
 
-      {canModerate && (
-        <div className="fixed bottom-20 left-3 z-30 sm:bottom-4 sm:left-4">
-          <Button
-            variant="outline"
-            onClick={() => setHostSheetOpen(true)}
-            className="border-[#2C3D34] bg-[#16211C]/90 text-[#F6F2E9] hover:bg-[#1E2C25]"
-          >
-            <Shield className="h-4 w-4 text-[#C9A66B]" strokeWidth={1.75} />
-            <span>Panel Host</span>
-            {waitingList.length > 0 && (
-              <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4552B] px-1.5 font-mono text-xs text-[#F6F2E9]">
-                {waitingList.length}
-              </span>
-            )}
-          </Button>
+      {(canModerate || inBreakoutRoom) && (
+        <div className="fixed bottom-20 left-3 z-30 flex flex-wrap items-center gap-2 sm:bottom-4 sm:left-4">
+          {canModerate && (
+            <Button
+              variant="outline"
+              onClick={() => setHostSheetOpen(true)}
+              className="border-[#2C3D34] bg-[#16211C]/90 text-[#F6F2E9] hover:bg-[#1E2C25]"
+            >
+              <Shield className="h-4 w-4 text-[#C9A66B]" strokeWidth={1.75} />
+              <span>Panel Host</span>
+              {waitingList.length > 0 && (
+                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4552B] px-1.5 font-mono text-xs text-[#F6F2E9]">
+                  {waitingList.length}
+                </span>
+              )}
+            </Button>
+          )}
+          {inBreakoutRoom && (
+            <Button
+              variant="outline"
+              onClick={handleReturnToMainRoom}
+              className="border-[#3F7D68] bg-[#2E5E4E]/95 text-[#F6F2E9] hover:bg-[#3F7D68]"
+            >
+              <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
+              <span>Kembali ke Ruang Utama</span>
+            </Button>
+          )}
         </div>
       )}
 
@@ -447,68 +545,7 @@ export function JitsiRoomPage() {
                   </span>
                   {p.role !== 'host' && (
                     <div className="flex items-center gap-1">
-                      <section className="space-y-2.5 border-t border-[var(--line)] pt-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
-                <Layers className="h-3.5 w-3.5" strokeWidth={1.75} />
-                <span>Breakout Rooms ({breakoutRooms.length})</span>
-              </h3>
-              {breakoutRooms.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleAutoAssignBreakout}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-[8px] border border-[var(--line)] bg-[var(--paper-2)] px-2.5 py-1 text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-2)]/70"
-                >
-                  <Shuffle className="h-3 w-3" strokeWidth={1.75} />
-                  <span>Bagi otomatis</span>
-                </button>
-              )}
-            </div>
-
-            <form onSubmit={handleAddBreakoutRoom} className="flex gap-2">
-              <input
-                type="text"
-                value={breakoutRoomName}
-                onChange={(e) => setBreakoutRoomName(e.target.value)}
-                placeholder={`Kelompok ${breakoutRooms.length + 1}`}
-                className="min-h-[40px] flex-1 rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)] px-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-soft)]/70 focus:border-[var(--moss)] focus:bg-[var(--paper)] focus:outline-none"
-              />
-              <Button type="submit" variant="outline" className="shrink-0">
-                <Plus className="h-4 w-4" strokeWidth={1.75} />
-                <span>Buat</span>
-              </Button>
-            </form>
-
-            {breakoutRooms.length > 0 && (
-              <ul className="divide-y divide-[var(--line)] rounded-[10px] border border-[var(--line)]">
-                {breakoutRooms.map((room) => (
-                  <li key={room.jid} className="flex items-center justify-between gap-2 p-2.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{room.name}</p>
-                      <p className="font-mono text-[11px] text-[var(--ink-soft)]">
-                        {room.participantCount} peserta
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Button variant="outline" onClick={() => handleJoinBreakout(room.jid)}>
-                        Masuk
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Tutup ${room.name}`}
-                        onClick={() => handleCloseBreakout(room.jid)}
-                      >
-                        <X className="h-4 w-4 text-[var(--clay)]" strokeWidth={1.75} />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {session?.role === 'host' && (
+                      {session?.role === 'host' && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -554,6 +591,18 @@ export function JitsiRoomPage() {
                 </button>
               )}
             </div>
+
+            {inBreakoutRoom && (
+              <div className="flex items-center justify-between gap-2 rounded-[10px] border border-[var(--moss)]/40 bg-[var(--moss)]/10 px-3 py-2">
+                <span className="text-xs font-medium text-[var(--ink)]">
+                  Kamu sedang berada di breakout room
+                </span>
+                <Button variant="outline" onClick={handleReturnToMainRoom} className="shrink-0">
+                  <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  <span>Ruang Utama</span>
+                </Button>
+              </div>
+            )}
 
             <form onSubmit={handleAddBreakoutRoom} className="flex gap-2">
               <input

@@ -275,7 +275,9 @@ class MeetingController extends Controller
             ]);
         }
 
-        $hostJoined = $this->hasHostJoined($meeting);
+        $hostJoined = $participant->status === 'waiting'
+            ? $this->hasHostJoined($meeting)
+            : true;
 
         // If lobby is disabled and host has now opened the room, auto-admit waiting guest
         if ($participant->status === 'waiting' && ! $meeting->lobby_enabled && $hostJoined) {

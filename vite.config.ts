@@ -44,6 +44,18 @@ export default defineConfig({
             '@': path.resolve(__dirname, 'resources/js'),
         },
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    motion: ['motion'],
+                    query: ['@tanstack/react-query'],
+                    icons: ['lucide-react'],
+                },
+            },
+        },
+    },
     test: {
         environment: 'jsdom',
         globals: true,
