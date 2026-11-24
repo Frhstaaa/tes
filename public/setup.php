@@ -193,13 +193,20 @@ function runTerminalCommand(string $basePath, string $command): array
         return ['code' => 1, 'output' => 'Perintah tidak boleh kosong.'];
     }
 
+    $composerHome = $basePath . '/storage/app/.composer';
+    if (! is_dir($composerHome)) {
+        @mkdir($composerHome, 0755, true);
+    }
+    $envPrefix = 'export HOME=' . escapeshellarg($basePath) . ' COMPOSER_HOME=' . escapeshellarg($composerHome) . ' && ';
+    $fullCommand = $envPrefix . $command;
+
     if (isPhpFunctionEnabled('proc_open')) {
         $descriptors = [
             0 => ['pipe', 'r'],
             1 => ['pipe', 'w'],
             2 => ['pipe', 'w'],
         ];
-        $process = @proc_open($command, $descriptors, $pipes, $basePath);
+        $process = @proc_open($fullCommand, $descriptors, $pipes, $basePath);
         if (is_resource($process)) {
             fclose($pipes[0]);
             $stdout = stream_get_contents($pipes[1]);
@@ -219,7 +226,7 @@ function runTerminalCommand(string $basePath, string $command): array
         $lines = [];
         $code = 0;
         $escapedDir = escapeshellarg($basePath);
-        @exec("cd {$escapedDir} && ({$command}) 2>&1", $lines, $code);
+        @exec("cd {$escapedDir} && {$envPrefix}({$command}) 2>&1", $lines, $code);
         $combined = trim(implode("\n", $lines));
         return [
             'code' => $code,
@@ -229,7 +236,7 @@ function runTerminalCommand(string $basePath, string $command): array
 
     if (isPhpFunctionEnabled('shell_exec')) {
         $escapedDir = escapeshellarg($basePath);
-        $out = @shell_exec("cd {$escapedDir} && ({$command}) 2>&1");
+        $out = @shell_exec("cd {$escapedDir} && {$envPrefix}({$command}) 2>&1");
         $combined = trim((string) $out);
         return [
             'code' => 0,
