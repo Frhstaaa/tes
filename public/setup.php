@@ -177,6 +177,72 @@ function syncMissingEnvKeys(string $envPath, string $examplePath): array
     ];
 }
 
+function isPhpFunctionEnabled(string $fn): bool
+{
+    if (! function_exists($fn)) {
+        return false;
+    }
+    $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+    return ! in_array($fn, $disabled, true);
+}
+
+function runTerminalCommand(string $basePath, string $command): array
+{
+    $command = trim($command);
+    if ($command === '') {
+        return ['code' => 1, 'output' => 'Perintah tidak boleh kosong.'];
+    }
+
+    if (isPhpFunctionEnabled('proc_open')) {
+        $descriptors = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+        $process = @proc_open($command, $descriptors, $pipes, $basePath);
+        if (is_resource($process)) {
+            fclose($pipes[0]);
+            $stdout = stream_get_contents($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $code = proc_close($process);
+            $combined = trim((string) $stdout . ((string) $stderr !== '' ? "\n" . $stderr : ''));
+            return [
+                'code' => $code,
+                'output' => $combined !== '' ? $combined : '(perintah selesai tanpa output)',
+            ];
+        }
+    }
+
+    if (isPhpFunctionEnabled('exec')) {
+        $lines = [];
+        $code = 0;
+        $escapedDir = escapeshellarg($basePath);
+        @exec("cd {$escapedDir} && ({$command}) 2>&1", $lines, $code);
+        $combined = trim(implode("\n", $lines));
+        return [
+            'code' => $code,
+            'output' => $combined !== '' ? $combined : '(perintah selesai tanpa output)',
+        ];
+    }
+
+    if (isPhpFunctionEnabled('shell_exec')) {
+        $escapedDir = escapeshellarg($basePath);
+        $out = @shell_exec("cd {$escapedDir} && ({$command}) 2>&1");
+        $combined = trim((string) $out);
+        return [
+            'code' => 0,
+            'output' => $combined !== '' ? $combined : '(perintah selesai tanpa output)',
+        ];
+    }
+
+    return [
+        'code' => 1,
+        'output' => 'Fungsi eksekusi shell (proc_open, exec, shell_exec) dinonaktifkan di konfigurasi PHP server ini.',
+    ];
+}
+
 $expectedToken = readEnvValue($envPath, 'DEPLOY_SETUP_TOKEN', 'meetingkeun-setup-2026');
 $providedToken = (string) ($_POST['token'] ?? $_GET['token'] ?? '');
 $authenticated = $providedToken !== '' && hash_equals($expectedToken, $providedToken);
@@ -256,10 +322,17 @@ ENV;
         $logs[] = array_merge(['label' => 'Bersihkan Cache Lama'], runArtisan($basePath, 'optimize:clear'));
         $logs[] = array_merge(['label' => 'Reset & Migrasi Ulang + Seed'], runArtisan($basePath, 'migrate:fresh', ['--force' => true, '--seed' => true]));
     }
+
+    if ($action === 'terminal_exec') {
+        $cmd = (string) ($_POST['command'] ?? '');
+        $logs[] = array_merge(['label' => 'Terminal: ' . $cmd], runTerminalCommand($basePath, $cmd));
+    }
 }
 
 $envExists = is_file($envPath);
 $storageWritable = is_writable($basePath . '/storage');
+$shellAvailable = isPhpFunctionEnabled('proc_open') || isPhpFunctionEnabled('exec') || isPhpFunctionEnabled('shell_exec');
+$lastCommand = (string) ($_POST['command'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -269,23 +342,31 @@ $storageWritable = is_writable($basePath . '/storage');
   <title>Meetingkeun — Setup &amp; Deploy CyberPanel</title>
   <style>
     :root {
-      --paper: #F6F2E9; --paper-2: #ECE6D8; --ink: #16211C;
-      --ink-soft: #4A5750; --moss: #2E5E4E; --clay: #B8431E; --line: #D8D0BE;
+      --paper: #F2F8F7; --paper-2: #FFFFFF; --ink: #1E293B;
+      --ink-soft: #64748B; --moss: #0B7A69; --clay: #B8431E; --line: #DCEAE7;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--paper); color: var(--ink); line-height: 1.5; }
-    .wrap { max-width: 820px; margin: 0 auto; padding: 32px 16px; }
-    .card { background: var(--paper-2); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 16px; }
+    .card { background: var(--paper-2); border: 1px solid var(--line); border-radius: 18px; padding: 20px; margin-bottom: 16px; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04); }
     h1 { margin: 0 0 6px; font-size: 24px; }
     h2 { margin: 0 0 12px; font-size: 16px; }
     p { margin: 0 0 12px; color: var(--ink-soft); font-size: 14px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; }
-    .btn-primary { background: var(--moss); border-color: var(--moss); color: #F6F2E9; }
-    .btn-danger { background: var(--clay); border-color: var(--clay); color: #F6F2E9; }
-    input { width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); font-size: 15px; margin-bottom: 12px; }
-    pre { background: var(--ink); color: var(--paper); padding: 12px; border-radius: 10px; overflow-x: auto; font-size: 12px; margin: 8px 0 0; white-space: pre-wrap; }
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-family: monospace; background: var(--paper); border: 1px solid var(--line); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper-2); color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; }
+    .btn:hover { background: #F5FBF9; }
+    .btn-primary { background: linear-gradient(90deg, #0C7D6C, #075D50); border-color: var(--moss); color: #FFFFFF; }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-danger { background: var(--clay); border-color: var(--clay); color: #FFFFFF; }
+    input { width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 15px; margin-bottom: 12px; }
+    .term-row { display: flex; gap: 10px; align-items: stretch; }
+    .term-row input { margin-bottom: 0; font-family: ui-monospace, monospace; font-size: 14px; background: #0E1B18; color: #E2E8F0; border-color: #233C36; }
+    .term-row button { width: auto; min-width: 120px; shrink: 0; }
+    .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .preset-btn { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-family: ui-monospace, monospace; font-size: 12px; cursor: pointer; }
+    .preset-btn:hover { border-color: var(--moss); color: var(--moss); }
+    pre { background: #0E1B18; color: #E2E8F0; padding: 14px; border-radius: 12px; overflow-x: auto; font-size: 12.5px; margin: 10px 0 0; white-space: pre-wrap; word-break: break-word; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 8px; font-size: 12px; font-family: monospace; background: var(--paper); border: 1px solid var(--line); }
   </style>
 </head>
 <body>
@@ -297,6 +378,7 @@ $storageWritable = is_writable($basePath . '/storage');
         <span class="badge">PHP <?= htmlspecialchars(PHP_VERSION) ?></span>
         <span class="badge">.env: <?= $envExists ? 'Ada' : 'Belum ada' ?></span>
         <span class="badge">storage writable: <?= $storageWritable ? 'Ya' : 'Tidak' ?></span>
+        <span class="badge">shell: <?= $shellAvailable ? 'Aktif' : 'Nonaktif' ?></span>
       </div>
     </div>
 
@@ -337,6 +419,46 @@ $storageWritable = is_writable($basePath . '/storage');
             <button type="submit" class="btn btn-danger">4. Reset &amp; Migrasi Ulang (Fresh)</button>
           </form>
         </div>
+      </div>
+
+      <div class="card">
+        <h2>Terminal Server</h2>
+        <p>Jalankan perintah langsung di direktori project (<code><?= htmlspecialchars($basePath) ?></code>).</p>
+        <form method="post" id="terminal-form">
+          <input type="hidden" name="token" value="<?= htmlspecialchars($providedToken) ?>" />
+          <input type="hidden" name="action" value="terminal_exec" />
+          <div class="term-row">
+            <input
+              type="text"
+              id="terminal-command"
+              name="command"
+              value="<?= htmlspecialchars($lastCommand) ?>"
+              placeholder="contoh: composer install --no-dev --optimize-autoloader"
+              autocomplete="off"
+              required
+            />
+            <button type="submit" class="btn btn-primary">Jalankan</button>
+          </div>
+          <div class="presets">
+            <?php
+              $presets = [
+                'php -v',
+                'php artisan about',
+                'php artisan migrate --force',
+                'php artisan optimize',
+                'composer install --no-dev --optimize-autoloader',
+                'git status',
+              ];
+              foreach ($presets as $preset):
+            ?>
+              <button
+                type="button"
+                class="preset-btn"
+                onclick="document.getElementById('terminal-command').value = this.textContent.trim(); document.getElementById('terminal-command').focus();"
+              ><?= htmlspecialchars($preset) ?></button>
+            <?php endforeach; ?>
+          </div>
+        </form>
       </div>
 
       <?php foreach ($logs as $log): ?>
