@@ -90,17 +90,9 @@ export function HomePage() {
       {/* Hero Greeting + 3D Teal Video Camera Illustration */}
       <header className="flex items-center justify-between gap-4 pt-1">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="font-display text-[32px] font-extrabold leading-[1.12] tracking-[-0.03em] text-[#1E293B] dark:text-[#F1F5F9] md:text-4xl">
-              Halo, {firstName}.
-            </h1>
-            {user?.role === 'superadmin' && (
-              <Chip tone="sand">
-                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
-                Superadmin
-              </Chip>
-            )}
-          </div>
+          <h1 className="font-display text-[32px] font-extrabold leading-[1.12] tracking-[-0.03em] text-[#1E293B] dark:text-[#F1F5F9] md:text-4xl">
+            Halo, {firstName}.
+          </h1>
           <p className="mt-1.5 text-[14px] text-[#64748B] dark:text-[#94A3B8] md:text-base">
             Siap melakukan meeting sekarang?
           </p>
