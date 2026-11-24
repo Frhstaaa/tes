@@ -97,7 +97,13 @@ function downloadAndExtractGithubZip(string $basePath, string $zipUrl): array
             continue;
         }
         $rel = substr($entry, $pos + 1);
-        if ($rel === '' || str_starts_with($rel, '.env') || str_starts_with($rel, 'storage/')) {
+        if (
+            $rel === '' ||
+            str_starts_with($rel, '.env') ||
+            str_starts_with($rel, 'storage/') ||
+            str_starts_with($rel, 'public/storage') ||
+            $rel === 'database/database.sqlite'
+        ) {
             continue;
         }
 
@@ -124,6 +130,51 @@ function downloadAndExtractGithubZip(string $basePath, string $zipUrl): array
     @unlink($tmpZip);
 
     return ['code' => 0, 'output' => "Berhasil memperbarui {$updated} file dari GitHub (branch main)."];
+}
+
+function syncMissingEnvKeys(string $envPath, string $examplePath): array
+{
+    if (! is_file($envPath) || ! is_file($examplePath)) {
+        return ['code' => 0, 'output' => 'Lewati sinkronisasi .env (.env atau .env.example tidak ditemukan).'];
+    }
+
+    $existingContent = (string) file_get_contents($envPath);
+    $existingKeys = [];
+    foreach (preg_split('/\r\n|\r|\n/', $existingContent) ?: [] as $line) {
+        $trimmed = trim($line);
+        if ($trimmed === '' || str_starts_with($trimmed, '#') || ! str_contains($trimmed, '=')) {
+            continue;
+        }
+        $key = trim(substr($trimmed, 0, strpos($trimmed, '=')));
+        if ($key !== '') {
+            $existingKeys[$key] = true;
+        }
+    }
+
+    $added = [];
+    foreach (preg_split('/\r\n|\r|\n/', (string) file_get_contents($examplePath)) ?: [] as $line) {
+        $trimmed = trim($line);
+        if ($trimmed === '' || str_starts_with($trimmed, '#') || ! str_contains($trimmed, '=')) {
+            continue;
+        }
+        $key = trim(substr($trimmed, 0, strpos($trimmed, '=')));
+        if ($key !== '' && ! isset($existingKeys[$key])) {
+            $added[] = $trimmed;
+            $existingKeys[$key] = true;
+        }
+    }
+
+    if ($added === []) {
+        return ['code' => 0, 'output' => 'Semua kunci konfigurasi .env sudah lengkap (tidak ada yang ditimpa).'];
+    }
+
+    $suffix = (str_ends_with($existingContent, "\n") ? '' : "\n") . "\n# Ditambahkan otomatis saat update\n" . implode("\n", $added) . "\n";
+    file_put_contents($envPath, $existingContent . $suffix);
+
+    return [
+        'code' => 0,
+        'output' => 'Menambahkan ' . count($added) . ' kunci baru ke .env tanpa mengubah data lama: ' . implode(', ', array_map(fn ($l) => substr($l, 0, strpos($l, '=')), $added)),
+    ];
 }
 
 $expectedToken = readEnvValue($envPath, 'DEPLOY_SETUP_TOKEN', 'meetingkeun-setup-2026');
@@ -185,8 +236,16 @@ ENV;
             ['label' => 'Unduh & Ekstrak Kode Terbaru dari GitHub (Frhstaaa/tes)'],
             downloadAndExtractGithubZip($basePath, 'https://github.com/Frhstaaa/tes/archive/refs/heads/main.zip')
         );
-        $logs[] = array_merge(['label' => 'Migrasi Database'], runArtisan($basePath, 'migrate', ['--force' => true]));
-        $logs[] = array_merge(['label' => 'Bersihkan Cache'], runArtisan($basePath, 'optimize:clear'));
+        $logs[] = array_merge(
+            ['label' => 'Sesuaikan Kunci Baru .env (Tanpa Menimpa Data Lama)'],
+            syncMissingEnvKeys($envPath, $basePath . '/.env.example')
+        );
+        $logs[] = array_merge(['label' => 'Bersihkan Cache Lama'], runArtisan($basePath, 'optimize:clear'));
+        $logs[] = array_merge(['label' => 'Migrasi Database (Aman, Tanpa Hapus Data)'], runArtisan($basePath, 'migrate', ['--force' => true]));
+        if (! file_exists($basePath . '/public/storage')) {
+            $logs[] = array_merge(['label' => 'Tautkan Storage Publik'], runArtisan($basePath, 'storage:link'));
+        }
+        $logs[] = array_merge(['label' => 'Segarkan Cache Aplikasi'], runArtisan($basePath, 'optimize:clear'));
     }
 
     if ($action === 'clear_cache') {
@@ -263,7 +322,7 @@ $storageWritable = is_writable($basePath . '/storage');
           <form method="post">
             <input type="hidden" name="token" value="<?= htmlspecialchars($providedToken) ?>" />
             <input type="hidden" name="action" value="github_update" />
-            <button type="submit" class="btn">2. Update Terbaru dari GitHub</button>
+            <button type="submit" class="btn">2. Update dari GitHub (Aman, Data Tetap)</button>
           </form>
 
           <form method="post">
