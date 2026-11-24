@@ -293,9 +293,25 @@ export function JitsiRoomPage() {
       }
     };
 
+    const handlePageHide = () => {
+      if (isEndingRef.current) return;
+      try {
+        void fetch(`/api/meetings/${kode}/leave`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ participant_id: session.participantId }),
+          keepalive: true,
+        });
+      } catch {
+        // Best-effort leave on tab close/refresh
+      }
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
     document.addEventListener('visibilitychange', handleVisibility);
     const timer = window.setInterval(checkRoomStatus, 3500);
     return () => {
+      window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibility);
       window.clearInterval(timer);
     };

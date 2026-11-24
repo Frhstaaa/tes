@@ -26,7 +26,11 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        if (config('database.default') === 'sqlite') {
+        if (
+            ! $this->app->runningUnitTests() &&
+            config('database.default') === 'sqlite' &&
+            config('database.connections.sqlite.database') !== ':memory:'
+        ) {
             try {
                 DB::statement('PRAGMA journal_mode=WAL;');
                 DB::statement('PRAGMA synchronous=NORMAL;');

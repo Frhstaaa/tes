@@ -184,6 +184,27 @@ class MeetingController extends Controller
         $isSuperadmin = $user?->isSuperadmin() ?? false;
         $isHost = ($user && $user->id === $meeting->host_id) || $isSuperadmin;
 
+        if ($user) {
+            $activeElsewhere = $meeting->participants()
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['admitted', 'waiting'])
+                ->whereNull('left_at')
+                ->get();
+
+            foreach ($activeElsewhere as $existing) {
+                if ($existing->updated_at && $existing->updated_at->gte(now()->subSeconds(20))) {
+                    return response()->json([
+                        'message' => 'Akun ini sedang aktif di perangkat atau tab lain dalam meeting yang sama. Keluar dari perangkat lain terlebih dahulu.',
+                    ], 409);
+                }
+
+                $existing->update([
+                    'status' => 'left',
+                    'left_at' => now(),
+                ]);
+            }
+        }
+
         $validated = $request->validate([
             'display_name' => ['required', 'string', 'min:1', 'max:60'],
             'passcode' => ['nullable', 'string', 'max:32'],
@@ -285,6 +306,8 @@ class MeetingController extends Controller
                 'status' => 'admitted',
                 'joined_at' => now(),
             ]);
+        } elseif (in_array($participant->status, ['admitted', 'waiting'], true) && (! $participant->updated_at || $participant->updated_at->lt(now()->subSeconds(8)))) {
+            $participant->touch();
         }
 
         $response = [

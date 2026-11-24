@@ -192,4 +192,52 @@ class MeetingApiTest extends TestCase
         $res->assertCreated()
             ->assertJsonPath('meeting.scheduled_at', '2026-11-24T14:00:00+07:00');
     }
+
+    public function test_same_user_cannot_join_same_meeting_from_two_devices_simultaneously(): void
+    {
+        $host = User::factory()->create();
+        $participantUser = User::factory()->create();
+
+        $createRes = $this->actingAs($host)->postJson('/api/meetings', [
+            'type' => 'instant',
+            'lobby_enabled' => false,
+        ]);
+        $code = $createRes->json('meeting.code');
+
+        // Host opens room
+        $this->actingAs($host)->postJson("/api/meetings/{$code}/join", [
+            'display_name' => 'Host',
+        ])->assertOk();
+
+        // Participant joins from Device 1
+        Cache::put('captcha:dev1', Hash::make('12345'), now()->addMinutes(5));
+        $join1 = $this->actingAs($participantUser)->postJson("/api/meetings/{$code}/join", [
+            'display_name' => 'User Device 1',
+            'captcha_id' => 'dev1',
+            'captcha_answer' => '12345',
+        ]);
+        $join1->assertOk();
+        $participantId = $join1->json('participant_id');
+
+        // Same user tries to join same meeting from Device 2 while active -> 409 Conflict
+        Cache::put('captcha:dev2', Hash::make('23456'), now()->addMinutes(5));
+        $join2 = $this->actingAs($participantUser)->postJson("/api/meetings/{$code}/join", [
+            'display_name' => 'User Device 2',
+            'captcha_id' => 'dev2',
+            'captcha_answer' => '23456',
+        ]);
+        $join2->assertStatus(409);
+
+        // After leaving from Device 1, user can join again from Device 2
+        $this->postJson("/api/meetings/{$code}/leave", [
+            'participant_id' => $participantId,
+        ])->assertOk();
+
+        Cache::put('captcha:dev3', Hash::make('34567'), now()->addMinutes(5));
+        $this->actingAs($participantUser)->postJson("/api/meetings/{$code}/join", [
+            'display_name' => 'User Device 2',
+            'captcha_id' => 'dev3',
+            'captcha_answer' => '34567',
+        ])->assertOk();
+    }
 }
