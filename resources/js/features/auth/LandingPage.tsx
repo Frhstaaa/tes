@@ -45,20 +45,10 @@ export function LandingPage() {
 
   return (
     <div className="relative flex flex-1 flex-col justify-between gap-12 py-2 lg:gap-14 lg:py-4">
-      {/* Subtle Ambient Background Glow (Breaks Flat Monotone Feel) */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-16 -left-24 h-80 w-80 rounded-full bg-[var(--moss)]/10 blur-3xl dark:bg-[var(--moss)]/20"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-10 right-0 h-96 w-96 rounded-full bg-[var(--sand)]/20 blur-3xl dark:bg-[var(--clay)]/12"
-      />
-
       {/* Hero Split */}
-      <section className="relative z-10 grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
-        <div className="space-y-6 lg:col-span-6">
-          <div className="inline-flex items-center gap-2.5 rounded-full border border-[var(--moss)]/25 bg-[var(--paper-2)]/90 px-3.5 py-1.5 text-xs font-medium text-[var(--ink)] shadow-xs">
+      <section className="relative z-10 grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-12">
+        <div className="space-y-5 sm:space-y-6 lg:col-span-6">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-[var(--moss)]/25 bg-[var(--paper-2)]/90 px-3.5 py-1.5 text-xs font-medium text-[var(--ink)]">
             <span className="relative flex h-2 w-2" aria-hidden="true">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--clay-bright)] opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--clay-bright)]" />
@@ -67,14 +57,10 @@ export function LandingPage() {
           </div>
 
           <div className="space-y-3 sm:space-y-4">
-            <h1 className="font-display text-[36px] font-bold leading-[1.05] tracking-[-0.035em] sm:text-5xl lg:text-[56px] lg:leading-[1.03]">
+            <h1 className="font-display text-[34px] font-bold leading-[1.08] tracking-[-0.035em] sm:text-5xl lg:text-[54px] lg:leading-[1.05]">
               Ayo meeting.{' '}
-              <span className="relative inline-block text-[var(--moss)] dark:text-[var(--moss-light)]">
+              <span className="text-[var(--moss)] dark:text-[var(--moss-light)]">
                 Buat ruang, kirim tautan.
-                <span
-                  aria-hidden="true"
-                  className="absolute right-0 -bottom-1 left-0 h-[3px] rounded-full bg-gradient-to-r from-[var(--moss)] via-[var(--clay-bright)] to-[var(--sand)] opacity-70"
-                />
               </span>
             </h1>
             <p className="max-w-lg text-base leading-relaxed text-[var(--ink-soft)] sm:text-lg">

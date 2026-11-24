@@ -15,8 +15,8 @@ export function PublicLayout() {
       {/* Organic Flowing Teal/Mint Background Waves */}
       <PageWaves />
 
-      <header className="relative z-10 border-b border-[var(--line)] bg-white/75 backdrop-blur-md dark:bg-[#111B18]/80">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-4 md:px-10 lg:px-12">
+      <header className="relative z-10 border-b border-[var(--line)] bg-[var(--paper)]/85 backdrop-blur-md">
+        <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-2 px-4 sm:px-6 lg:px-12">
           <Link to="/" aria-label="Beranda Meetingkeun" className="shrink-0">
             <BrandLogo size="sm" />
           </Link>
@@ -69,12 +69,12 @@ export function PublicLayout() {
         </div>
       )}
 
-      <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6 md:px-10 md:py-12 lg:px-12">
+      <main className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-4 py-6 sm:px-6 md:py-10 lg:px-12">
         <Outlet />
       </main>
 
-      <footer className="relative z-10 border-t border-[var(--line)] bg-white/60 py-5 backdrop-blur-xs dark:bg-[#111B18]/70">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-1 px-4 text-xs text-[var(--ink-soft)] sm:flex-row sm:items-center sm:justify-between md:px-10 lg:px-12">
+      <footer className="relative z-10 border-t border-[var(--line)] bg-[var(--paper)]/80 py-5 backdrop-blur-xs">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-1 px-4 text-xs text-[var(--ink-soft)] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-12">
           <span>Meetingkeun — dibuat oleh Tiyas Frahesta</span>
           <span>Ruang video meeting berbasis web</span>
         </div>
