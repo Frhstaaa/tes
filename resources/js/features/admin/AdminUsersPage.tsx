@@ -34,11 +34,17 @@ export function AdminUsersPage() {
 
   // WhatsApp Gateway settings state
   const [waEnabled, setWaEnabled] = useState(false);
-  const [waProvider, setWaProvider] = useState<'fonnte' | 'wablas' | 'waha' | 'custom'>('fonnte');
-  const [waApiUrl, setWaApiUrl] = useState('');
+  const [waProvider, setWaProvider] = useState<'mardira' | 'fonnte' | 'wablas' | 'waha' | 'custom'>('mardira');
+  const [waApiUrl, setWaApiUrl] = useState('http://127.0.0.1:8001/api/v1/messages/send');
   const [waApiKey, setWaApiKey] = useState('');
-  const [waSession, setWaSession] = useState('default');
+  const [waSession, setWaSession] = useState('');
   const [waTestPhone, setWaTestPhone] = useState('');
+  const [waQuotaInfo, setWaQuotaInfo] = useState<{
+    workspace?: { name?: string };
+    plan?: { name?: string; status?: string };
+    quota?: { remaining?: number; monthly_total?: number };
+    devices?: { connected?: number; total?: number };
+  } | null>(null);
 
   // Create form state
   const [newName, setNewName] = useState('');
@@ -73,7 +79,7 @@ export function AdminUsersPage() {
 
   const waQuery = useQuery<{
     enabled: boolean;
-    provider: 'fonnte' | 'wablas' | 'waha' | 'custom';
+    provider: 'mardira' | 'fonnte' | 'wablas' | 'waha' | 'custom';
     api_url: string;
     session: string;
     api_key_set: boolean;
@@ -84,7 +90,7 @@ export function AdminUsersPage() {
       const res = await api.get<{
         whatsapp: {
           enabled: boolean;
-          provider: 'fonnte' | 'wablas' | 'waha' | 'custom';
+          provider: 'mardira' | 'fonnte' | 'wablas' | 'waha' | 'custom';
           api_url: string;
           session: string;
           api_key_set: boolean;
@@ -100,8 +106,8 @@ export function AdminUsersPage() {
     if (waQuery.data) {
       setWaEnabled(waQuery.data.enabled);
       setWaProvider(waQuery.data.provider);
-      setWaApiUrl(waQuery.data.api_url);
-      setWaSession(waQuery.data.session || 'default');
+      setWaApiUrl(waQuery.data.api_url || (waQuery.data.provider === 'mardira' ? 'http://127.0.0.1:8001/api/v1/messages/send' : ''));
+      setWaSession(waQuery.data.session || '');
     }
   }, [waQuery.data]);
 
@@ -113,7 +119,7 @@ export function AdminUsersPage() {
         provider: waProvider,
         api_url: waApiUrl.trim() || null,
         api_key: waApiKey.trim() || undefined,
-        session: waSession.trim() || 'default',
+        session: waSession.trim() || '',
       });
       return res.data;
     },
@@ -141,6 +147,20 @@ export function AdminUsersPage() {
     },
     onError: (err) => {
       pushToast(extractErrorMessage(err, 'Gagal mengirim pesan tes WhatsApp.'), 'danger');
+    },
+  });
+
+  const quotaWaMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.get('/admin/whatsapp/quota');
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setWaQuotaInfo(data);
+      pushToast('Status & kuota MARDIRA WA berhasil dimuat.', 'success');
+    },
+    onError: (err) => {
+      pushToast(extractErrorMessage(err, 'Gagal mengecek kuota MARDIRA WA.'), 'danger');
     },
   });
 
@@ -503,9 +523,10 @@ export function AdminUsersPage() {
                 id="wa-provider"
                 value={waProvider}
                 onChange={(e) => {
-                  const p = e.target.value as 'fonnte' | 'wablas' | 'waha' | 'custom';
+                  const p = e.target.value as 'mardira' | 'fonnte' | 'wablas' | 'waha' | 'custom';
                   setWaProvider(p);
                   const defaults: Record<string, string> = {
+                    mardira: 'http://127.0.0.1:8001/api/v1/messages/send',
                     fonnte: 'https://api.fonnte.com/send',
                     wablas: 'https://solo.wablas.com/api/send-message',
                     waha: 'http://127.0.0.1:3000/api/sendText',
@@ -517,6 +538,7 @@ export function AdminUsersPage() {
                 }}
                 className="min-h-[44px] w-full rounded-[13px] border border-[var(--line)] bg-[var(--paper-2)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--moss)] focus:outline-none"
               >
+                <option value="mardira">MARDIRA WA Gateway (v1.0 Bearer)</option>
                 <option value="fonnte">Fonnte (api.fonnte.com)</option>
                 <option value="wablas">Wablas</option>
                 <option value="waha">WAHA (Self-hosted Docker/HTTP)</option>
@@ -526,34 +548,75 @@ export function AdminUsersPage() {
 
             <Input
               label="URL Endpoint API"
-              placeholder="https://api.fonnte.com/send"
+              placeholder="http://127.0.0.1:8001/api/v1/messages/send"
               value={waApiUrl}
               onChange={(e) => setWaApiUrl(e.target.value)}
+              hint={
+                waProvider === 'mardira'
+                  ? 'Bisa isi Base URL (http://127.0.0.1:8001) atau endpoint penuh (/api/v1/messages/send).'
+                  : undefined
+              }
             />
 
             <Input
-              label="API Key / Token"
+              label="API Key / Bearer Token"
               type="password"
               placeholder={
                 waQuery.data?.api_key_set
                   ? `Tersimpan (${waQuery.data.api_key_preview}) — kosongkan jika tidak diubah`
-                  : 'Masukkan token / API key gateway'
+                  : 'bk_live_...'
               }
               value={waApiKey}
               onChange={(e) => setWaApiKey(e.target.value)}
             />
 
             <Input
-              label="Session / Device ID (Opsional)"
-              placeholder="default"
+              label="Device ID / Session (Opsional)"
+              placeholder={waProvider === 'mardira' ? 'Kosongkan untuk pakai device default token' : 'default'}
               value={waSession}
               onChange={(e) => setWaSession(e.target.value)}
-              hint="Dipakai oleh WAHA atau gateway multi-device."
+              hint={
+                waProvider === 'mardira'
+                  ? 'Isi angka device_id jika ingin memilih perangkat tertentu, atau kosongkan.'
+                  : 'Dipakai oleh WAHA atau gateway multi-device.'
+              }
             />
 
-            <Button type="submit" variant="primary" size="lg" loading={saveWaMutation.isPending}>
-              Simpan Pengaturan Gateway
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" variant="primary" size="lg" loading={saveWaMutation.isPending}>
+                Simpan Pengaturan Gateway
+              </Button>
+              {waProvider === 'mardira' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => quotaWaMutation.mutate()}
+                  loading={quotaWaMutation.isPending}
+                >
+                  Cek Kuota &amp; Status
+                </Button>
+              )}
+            </div>
+
+            {waQuotaInfo && waProvider === 'mardira' && (
+              <div className="rounded-[14px] border border-[var(--line)] bg-[var(--paper)] p-3.5 text-xs space-y-1">
+                <p className="font-semibold text-[var(--ink)]">
+                  {waQuotaInfo.workspace?.name ?? 'MARDIRA WA Workspace'} ·{' '}
+                  <span className="text-[var(--moss)]">{waQuotaInfo.plan?.name ?? 'Active'}</span>
+                </p>
+                <p className="text-[var(--ink-soft)]">
+                  Sisa kuota:{' '}
+                  <span className="font-mono font-semibold text-[var(--ink)]">
+                    {waQuotaInfo.quota?.remaining ?? 0} / {waQuotaInfo.quota?.monthly_total ?? 0}
+                  </span>{' '}
+                  · Perangkat terhubung:{' '}
+                  <span className="font-mono font-semibold text-[var(--ink)]">
+                    {waQuotaInfo.devices?.connected ?? 0}/{waQuotaInfo.devices?.total ?? 0}
+                  </span>
+                </p>
+              </div>
+            )}
           </form>
 
           <form

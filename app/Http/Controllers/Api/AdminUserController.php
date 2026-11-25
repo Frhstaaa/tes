@@ -233,7 +233,7 @@ class AdminUserController extends Controller
     {
         $validated = $request->validate([
             'enabled' => ['required', 'boolean'],
-            'provider' => ['required', Rule::in(['fonnte', 'wablas', 'waha', 'custom'])],
+            'provider' => ['required', Rule::in(['mardira', 'fonnte', 'wablas', 'waha', 'custom'])],
             'api_url' => ['nullable', 'url', 'max:500'],
             'api_key' => ['nullable', 'string', 'max:500'],
             'clear_api_key' => ['nullable', 'boolean'],
@@ -287,6 +287,19 @@ class AdminUserController extends Controller
             'message' => 'Pesan tes berhasil dikirim ke ' . $result['phone'] . '.',
             'result' => $result,
         ]);
+    }
+
+    public function quotaWhatsapp(WhatsAppGatewayService $wa): JsonResponse
+    {
+        try {
+            $data = $wa->checkQuota();
+
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     private function formatAdminUser(User $user): array

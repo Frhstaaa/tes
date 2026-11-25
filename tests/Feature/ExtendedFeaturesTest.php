@@ -163,4 +163,41 @@ class ExtendedFeaturesTest extends TestCase
 
         Http::assertSentCount(2);
     }
+
+    public function test_mardira_wa_gateway_resolves_endpoint_and_sends_bearer_token(): void
+    {
+        Http::fake([
+            'http://127.0.0.1:8001/api/v1/messages/send' => Http::response([
+                'status' => true,
+                'message' => 'Pesan berhasil diproses',
+            ], 200),
+            'http://127.0.0.1:8001/api/v1/quota' => Http::response([
+                'status' => true,
+                'quota' => ['remaining' => 4951, 'monthly_total' => 5000],
+            ], 200),
+        ]);
+
+        $admin = User::factory()->create(['role' => 'superadmin', 'is_active' => true]);
+
+        $this->actingAs($admin)->putJson('/api/admin/whatsapp', [
+            'enabled' => true,
+            'provider' => 'mardira',
+            'api_url' => 'http://127.0.0.1:8001',
+            'api_key' => 'bk_live_test_key',
+        ])->assertOk();
+
+        $this->actingAs($admin)->postJson('/api/admin/whatsapp/test', [
+            'phone' => '08386012467',
+        ])->assertOk();
+
+        $this->actingAs($admin)->getJson('/api/admin/whatsapp/quota')
+            ->assertOk()
+            ->assertJsonPath('quota.remaining', 4951);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'http://127.0.0.1:8001/api/v1/messages/send'
+                && $request->hasHeader('Authorization', 'Bearer bk_live_test_key')
+                && $request['phone'] === '628386012467';
+        });
+    }
 }

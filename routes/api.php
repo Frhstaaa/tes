@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/whatsapp', [AdminUserController::class, 'getWhatsappSettings']);
         Route::put('/whatsapp', [AdminUserController::class, 'updateWhatsappSettings']);
         Route::post('/whatsapp/test', [AdminUserController::class, 'testWhatsapp']);
+        Route::get('/whatsapp/quota', [AdminUserController::class, 'quotaWhatsapp']);
     });
 });
 

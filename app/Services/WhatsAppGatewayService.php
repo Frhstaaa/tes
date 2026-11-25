@@ -13,9 +13,9 @@ class WhatsAppGatewayService
     public function getConfig(): array
     {
         $enabled = AppSetting::getValue('wa_enabled', '0') === '1';
-        $provider = AppSetting::getValue('wa_provider', 'fonnte') ?: 'fonnte';
+        $provider = AppSetting::getValue('wa_provider', 'mardira') ?: 'mardira';
         $apiUrl = AppSetting::getValue('wa_api_url', '') ?: '';
-        $session = AppSetting::getValue('wa_session', 'default') ?: 'default';
+        $session = AppSetting::getValue('wa_session', '') ?: '';
         $encryptedKey = AppSetting::getValue('wa_api_key');
 
         $apiKey = '';
@@ -69,13 +69,52 @@ class WhatsAppGatewayService
         AppSetting::setValue('wa_enabled', ! empty($data['enabled']) ? '1' : '0');
         AppSetting::setValue('wa_provider', $data['provider']);
         AppSetting::setValue('wa_api_url', trim((string) ($data['api_url'] ?? '')));
-        AppSetting::setValue('wa_session', trim((string) ($data['wa_session'] ?? $data['session'] ?? 'default')) ?: 'default');
+        AppSetting::setValue('wa_session', trim((string) ($data['wa_session'] ?? $data['session'] ?? '')));
 
         if (! empty($data['clear_api_key'])) {
             AppSetting::setValue('wa_api_key', null);
         } elseif (! empty($data['api_key'])) {
             AppSetting::setValue('wa_api_key', Crypt::encryptString(trim((string) $data['api_key'])));
         }
+    }
+
+    public static function resolveMardiraUrl(string $rawUrl, string $path = '/api/v1/messages/send'): string
+    {
+        $url = rtrim(trim($rawUrl), '/');
+        if ($url === '') {
+            return '';
+        }
+        if (str_ends_with($url, '/api/v1/messages/send') || str_ends_with($url, '/api/v1/messages/send-media')) {
+            return $path === '/api/v1/messages/send'
+                ? $url
+                : preg_replace('#/api/v1/messages/send(-media)?$#', $path, $url);
+        }
+        $base = preg_replace('#/api/v1$#', '', $url);
+
+        return rtrim((string) $base, '/') . $path;
+    }
+
+    public function checkQuota(): array
+    {
+        $cfg = $this->getConfig();
+        if ($cfg['api_url'] === '') {
+            throw new RuntimeException('URL Endpoint WhatsApp Gateway belum diatur.');
+        }
+        if ($cfg['provider'] !== 'mardira') {
+            throw new RuntimeException('Cek kuota langsung hanya tersedia untuk MARDIRA WA Gateway.');
+        }
+
+        $quotaUrl = self::resolveMardiraUrl($cfg['api_url'], '/api/v1/quota');
+        $response = Http::timeout(10)
+            ->withToken($cfg['api_key'])
+            ->acceptJson()
+            ->get($quotaUrl);
+
+        if (! $response->successful()) {
+            throw new RuntimeException('HTTP ' . $response->status() . ': ' . substr($response->body(), 0, 140));
+        }
+
+        return (array) $response->json();
     }
 
     public static function normalizePhone(string $raw): ?string
@@ -140,6 +179,18 @@ class WhatsAppGatewayService
             $request = Http::timeout(12)->acceptJson();
 
             $response = match ($cfg['provider']) {
+                'mardira' => (function () use ($request, $cfg, $normalized, $message) {
+                    $endpoint = self::resolveMardiraUrl($cfg['api_url'], '/api/v1/messages/send');
+                    $payload = [
+                        'phone' => $normalized,
+                        'message' => $message,
+                    ];
+                    if ($cfg['session'] !== '' && ctype_digit($cfg['session'])) {
+                        $payload['device_id'] = (int) $cfg['session'];
+                    }
+
+                    return $request->withToken($cfg['api_key'])->post($endpoint, $payload);
+                })(),
                 'fonnte' => $request
                     ->withHeaders(['Authorization' => $cfg['api_key']])
                     ->asForm()
