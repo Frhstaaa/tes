@@ -1,205 +1,216 @@
 {
-  "_Chip-DIjbAAg5.js": {
-    "file": "assets/Chip-DIjbAAg5.js",
+  "_Chip-BBNPsFoT.js": {
+    "file": "assets/Chip-BBNPsFoT.js",
     "name": "Chip",
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx"
     ]
   },
-  "_NewMeetingSheet-Bcd0DiSu.js": {
-    "file": "assets/NewMeetingSheet-Bcd0DiSu.js",
+  "_NewMeetingSheet-BOOQA72j.js": {
+    "file": "assets/NewMeetingSheet-BOOQA72j.js",
     "name": "NewMeetingSheet",
     "imports": [
-      "_query-DQFtpeQ6.js",
-      "_Sheet-6WEyxzYv.js",
+      "_query-C5jPMmJS.js",
+      "_Sheet-22ZCGAxt.js",
       "resources/js/main.tsx",
-      "_useMeetings-CXdS1k3q.js",
-      "_react-vendor-WDTxjL6d.js"
+      "_useMeetings-CRF1RDhS.js",
+      "_react-vendor-DjtxvZMz.js"
     ]
   },
-  "_Sheet-6WEyxzYv.js": {
-    "file": "assets/Sheet-6WEyxzYv.js",
+  "_Pagination-Dpxv9N_O.js": {
+    "file": "assets/Pagination-Dpxv9N_O.js",
+    "name": "Pagination",
+    "imports": [
+      "_query-C5jPMmJS.js",
+      "resources/js/main.tsx",
+      "_icons-DOMSsvEG.js"
+    ]
+  },
+  "_Sheet-22ZCGAxt.js": {
+    "file": "assets/Sheet-22ZCGAxt.js",
     "name": "Sheet",
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx",
-      "_icons-CDPUoaxX.js"
+      "_icons-DOMSsvEG.js"
     ]
   },
-  "_icons-CDPUoaxX.js": {
-    "file": "assets/icons-CDPUoaxX.js",
+  "_icons-DOMSsvEG.js": {
+    "file": "assets/icons-DOMSsvEG.js",
     "name": "icons",
     "imports": [
-      "_query-DQFtpeQ6.js"
+      "_query-C5jPMmJS.js"
     ]
   },
   "_motion-DMdQsqvA.js": {
     "file": "assets/motion-DMdQsqvA.js",
     "name": "motion"
   },
-  "_query-DQFtpeQ6.js": {
-    "file": "assets/query-DQFtpeQ6.js",
+  "_query-C5jPMmJS.js": {
+    "file": "assets/query-C5jPMmJS.js",
     "name": "query"
   },
-  "_react-vendor-WDTxjL6d.js": {
-    "file": "assets/react-vendor-WDTxjL6d.js",
+  "_react-vendor-DjtxvZMz.js": {
+    "file": "assets/react-vendor-DjtxvZMz.js",
     "name": "react-vendor",
     "imports": [
-      "_query-DQFtpeQ6.js"
+      "_query-C5jPMmJS.js"
     ]
   },
-  "_useMeetings-CXdS1k3q.js": {
-    "file": "assets/useMeetings-CXdS1k3q.js",
+  "_useMeetings-CRF1RDhS.js": {
+    "file": "assets/useMeetings-CRF1RDhS.js",
     "name": "useMeetings",
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx"
     ]
   },
-  "_useRoomSessionStore-CfL-gtqf.js": {
-    "file": "assets/useRoomSessionStore-CfL-gtqf.js",
+  "_useRoomSessionStore-Dl9qyhzM.js": {
+    "file": "assets/useRoomSessionStore-Dl9qyhzM.js",
     "name": "useRoomSessionStore",
     "imports": [
       "resources/js/main.tsx"
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-BRq1AhXG.css",
+    "file": "assets/app-Q3ngD9u9.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/js/features/admin/AdminUsersPage.tsx": {
-    "file": "assets/AdminUsersPage-BjaIlvrf.js",
+    "file": "assets/AdminUsersPage-DQW7UsOJ.js",
     "name": "AdminUsersPage",
     "src": "resources/js/features/admin/AdminUsersPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx",
-      "_Chip-DIjbAAg5.js",
-      "_Sheet-6WEyxzYv.js",
-      "_icons-CDPUoaxX.js",
-      "_react-vendor-WDTxjL6d.js",
+      "_Chip-BBNPsFoT.js",
+      "_Sheet-22ZCGAxt.js",
+      "_icons-DOMSsvEG.js",
+      "_react-vendor-DjtxvZMz.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/auth/AccountPage.tsx": {
-    "file": "assets/AccountPage-B0D7fB73.js",
+    "file": "assets/AccountPage-Byws4cRg.js",
     "name": "AccountPage",
     "src": "resources/js/features/auth/AccountPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx",
-      "_Chip-DIjbAAg5.js",
-      "_react-vendor-WDTxjL6d.js",
-      "_icons-CDPUoaxX.js",
+      "_Chip-BBNPsFoT.js",
+      "_react-vendor-DjtxvZMz.js",
+      "_icons-DOMSsvEG.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/history/HistoryPage.tsx": {
-    "file": "assets/HistoryPage-CUvbe0T1.js",
+    "file": "assets/HistoryPage-DxuCLiDZ.js",
     "name": "HistoryPage",
     "src": "resources/js/features/history/HistoryPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
-      "_Chip-DIjbAAg5.js",
-      "_useMeetings-CXdS1k3q.js",
+      "_query-C5jPMmJS.js",
+      "_Chip-BBNPsFoT.js",
+      "_Pagination-Dpxv9N_O.js",
+      "_useMeetings-CRF1RDhS.js",
       "resources/js/main.tsx",
-      "_react-vendor-WDTxjL6d.js",
-      "_motion-DMdQsqvA.js",
-      "_icons-CDPUoaxX.js"
+      "_icons-DOMSsvEG.js",
+      "_react-vendor-DjtxvZMz.js",
+      "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/meetings/HomePage.tsx": {
-    "file": "assets/HomePage-wGyLjTzy.js",
+    "file": "assets/HomePage-DBCROmC7.js",
     "name": "HomePage",
     "src": "resources/js/features/meetings/HomePage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx",
-      "_Sheet-6WEyxzYv.js",
-      "_Chip-DIjbAAg5.js",
-      "_useMeetings-CXdS1k3q.js",
-      "_NewMeetingSheet-Bcd0DiSu.js",
-      "_react-vendor-WDTxjL6d.js",
-      "_icons-CDPUoaxX.js",
+      "_Sheet-22ZCGAxt.js",
+      "_Chip-BBNPsFoT.js",
+      "_useMeetings-CRF1RDhS.js",
+      "_NewMeetingSheet-BOOQA72j.js",
+      "_react-vendor-DjtxvZMz.js",
+      "_icons-DOMSsvEG.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/meetings/SchedulePage.tsx": {
-    "file": "assets/SchedulePage-C36n-iEu.js",
+    "file": "assets/SchedulePage-BgJTO4-w.js",
     "name": "SchedulePage",
     "src": "resources/js/features/meetings/SchedulePage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx",
-      "_Chip-DIjbAAg5.js",
-      "_useMeetings-CXdS1k3q.js",
-      "_NewMeetingSheet-Bcd0DiSu.js",
-      "_Sheet-6WEyxzYv.js",
-      "_icons-CDPUoaxX.js",
-      "_react-vendor-WDTxjL6d.js",
+      "_Chip-BBNPsFoT.js",
+      "_Pagination-Dpxv9N_O.js",
+      "_useMeetings-CRF1RDhS.js",
+      "_NewMeetingSheet-BOOQA72j.js",
+      "_Sheet-22ZCGAxt.js",
+      "_icons-DOMSsvEG.js",
+      "_react-vendor-DjtxvZMz.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/prejoin/PrejoinPage.tsx": {
-    "file": "assets/PrejoinPage-BVtcwUSo.js",
+    "file": "assets/PrejoinPage-aMHbVOFZ.js",
     "name": "PrejoinPage",
     "src": "resources/js/features/prejoin/PrejoinPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx",
-      "_useRoomSessionStore-CfL-gtqf.js",
-      "_Chip-DIjbAAg5.js",
-      "_react-vendor-WDTxjL6d.js",
-      "_icons-CDPUoaxX.js",
+      "_useRoomSessionStore-Dl9qyhzM.js",
+      "_Chip-BBNPsFoT.js",
+      "_react-vendor-DjtxvZMz.js",
+      "_icons-DOMSsvEG.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/room/FinishedPage.tsx": {
-    "file": "assets/FinishedPage-r2WNKWpY.js",
+    "file": "assets/FinishedPage-BOpLhP6F.js",
     "name": "FinishedPage",
     "src": "resources/js/features/room/FinishedPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
+      "_query-C5jPMmJS.js",
       "resources/js/main.tsx",
-      "_react-vendor-WDTxjL6d.js",
-      "_icons-CDPUoaxX.js",
+      "_react-vendor-DjtxvZMz.js",
+      "_icons-DOMSsvEG.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/features/room/JitsiRoomPage.tsx": {
-    "file": "assets/JitsiRoomPage-B3x0deM9.js",
+    "file": "assets/JitsiRoomPage-Bc5yMkby.js",
     "name": "JitsiRoomPage",
     "src": "resources/js/features/room/JitsiRoomPage.tsx",
     "isDynamicEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
-      "_useRoomSessionStore-CfL-gtqf.js",
+      "_query-C5jPMmJS.js",
+      "_useRoomSessionStore-Dl9qyhzM.js",
       "resources/js/main.tsx",
-      "_Sheet-6WEyxzYv.js",
-      "_react-vendor-WDTxjL6d.js",
-      "_icons-CDPUoaxX.js",
+      "_Sheet-22ZCGAxt.js",
+      "_react-vendor-DjtxvZMz.js",
+      "_icons-DOMSsvEG.js",
       "_motion-DMdQsqvA.js"
     ]
   },
   "resources/js/main.tsx": {
-    "file": "assets/main-Di0af0CY.js",
+    "file": "assets/main-h9h0hjjy.js",
     "name": "main",
     "src": "resources/js/main.tsx",
     "isEntry": true,
     "imports": [
-      "_query-DQFtpeQ6.js",
-      "_react-vendor-WDTxjL6d.js",
+      "_query-C5jPMmJS.js",
+      "_react-vendor-DjtxvZMz.js",
       "_motion-DMdQsqvA.js",
-      "_icons-CDPUoaxX.js"
+      "_icons-DOMSsvEG.js"
     ],
     "dynamicImports": [
       "resources/js/features/meetings/SchedulePage.tsx",

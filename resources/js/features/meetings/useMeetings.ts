@@ -1,6 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ensureCsrfCookie } from '@/lib/api';
 import type { Meeting } from '@/types';
+
+export interface PaginationMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export interface PaginatedMeetingsResult {
+  meetings: Meeting[];
+  meta: PaginationMeta;
+}
 
 export function useMeetings(filter: 'upcoming' | 'history' | 'all' = 'upcoming') {
   return useQuery<Meeting[]>({
@@ -11,6 +23,23 @@ export function useMeetings(filter: 'upcoming' | 'history' | 'all' = 'upcoming')
       });
       return res.data.meetings;
     },
+  });
+}
+
+export function useMeetingsPaginated(
+  filter: 'upcoming' | 'history' | 'all' = 'history',
+  page = 1,
+  perPage = 10
+) {
+  return useQuery<PaginatedMeetingsResult>({
+    queryKey: ['meetings', filter, 'paginated', page, perPage],
+    queryFn: async () => {
+      const res = await api.get<PaginatedMeetingsResult>('/meetings', {
+        params: { filter, page, per_page: perPage },
+      });
+      return res.data;
+    },
+    placeholderData: keepPreviousData,
   });
 }
 

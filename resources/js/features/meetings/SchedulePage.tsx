@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, CalendarPlus, Copy, Edit3, Lock, MessageSquare, Share2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
-import { useCancelMeeting, useMeetings } from './useMeetings';
+import { Pagination } from '@/components/ui/Pagination';
+import { useCancelMeeting, useMeetingsPaginated } from './useMeetings';
 import { NewMeetingSheet } from './NewMeetingSheet';
 import { EditMeetingSheet } from './EditMeetingSheet';
 import { formatMeetingDate } from '@/lib/format';
@@ -13,10 +14,19 @@ import type { Meeting } from '@/types';
 
 export function SchedulePage() {
   const pushToast = useToastStore((s) => s.push);
-  const { data: meetings = [], isLoading } = useMeetings('upcoming');
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isFetching } = useMeetingsPaginated('upcoming', page, 9);
+  const meetings = data?.meetings ?? [];
+  const meta = data?.meta;
   const cancelMeeting = useCancelMeeting();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+
+  useEffect(() => {
+    if (meta && page > 1 && meetings.length === 0) {
+      setPage(Math.max(1, meta.last_page));
+    }
+  }, [meta, page, meetings.length]);
 
   const handleShare = async (code: string, title: string) => {
     const url = `${window.location.origin}/m/${code}`;
@@ -169,6 +179,20 @@ export function SchedulePage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {meta && (
+        <Pagination
+          currentPage={meta.current_page}
+          lastPage={meta.last_page}
+          total={meta.total}
+          perPage={meta.per_page}
+          onPageChange={(next) => {
+            setPage(next);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          isFetching={isFetching}
+        />
       )}
 
       <NewMeetingSheet open={sheetOpen} onClose={() => setSheetOpen(false)} defaultMode="scheduled" />

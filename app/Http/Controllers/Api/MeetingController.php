@@ -42,6 +42,21 @@ class MeetingController extends Controller
             $query->orderByDesc('created_at');
         }
 
+        if ($request->has('page') || $request->has('per_page')) {
+            $perPage = min(50, max(1, (int) $request->query('per_page', 10)));
+            $paginator = $query->paginate($perPage);
+
+            return response()->json([
+                'meetings' => $paginator->getCollection()->map(fn (Meeting $m) => $this->formatMeeting($m, $user->id)),
+                'meta' => [
+                    'current_page' => $paginator->currentPage(),
+                    'last_page' => $paginator->lastPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                ],
+            ]);
+        }
+
         $meetings = $query->limit(50)->get()->map(fn (Meeting $m) => $this->formatMeeting($m, $user->id));
 
         return response()->json([

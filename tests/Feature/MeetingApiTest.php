@@ -240,4 +240,29 @@ class MeetingApiTest extends TestCase
             'captcha_answer' => '34567',
         ])->assertOk();
     }
+
+    public function test_meetings_index_supports_pagination(): void
+    {
+        $host = User::factory()->create();
+
+        for ($i = 1; $i <= 12; $i++) {
+            Meeting::create([
+                'code' => sprintf('pag-%03d-abc', $i),
+                'host_id' => $host->id,
+                'title' => "Meeting {$i}",
+                'type' => 'instant',
+                'status' => 'ended',
+                'ended_at' => now()->subMinutes($i),
+            ]);
+        }
+
+        $res = $this->actingAs($host)->getJson('/api/meetings?filter=history&page=2&per_page=10');
+
+        $res->assertOk()
+            ->assertJsonCount(2, 'meetings')
+            ->assertJsonPath('meta.current_page', 2)
+            ->assertJsonPath('meta.last_page', 2)
+            ->assertJsonPath('meta.per_page', 10)
+            ->assertJsonPath('meta.total', 12);
+    }
 }
