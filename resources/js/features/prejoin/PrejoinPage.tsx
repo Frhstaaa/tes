@@ -442,7 +442,7 @@ export function PrejoinPage() {
               playsInline
               muted
               className={cn(
-                'h-full w-full -scale-x-100 object-cover',
+                'h-full w-full object-cover',
                 !camOn && 'hidden'
               )}
             />

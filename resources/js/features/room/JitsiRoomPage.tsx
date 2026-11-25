@@ -91,7 +91,8 @@ export function JitsiRoomPage() {
           configOverwrite: {
             prejoinPageEnabled: false,
             disableDeepLinking: true,
-            doNotFlipLocalVideo: false,
+            doNotFlipLocalVideo: true,
+            disableLocalVideoFlip: true,
             startWithAudioMuted: session.startMutedAudio,
             startWithVideoMuted: session.startMutedVideo,
             resolution: 720,
