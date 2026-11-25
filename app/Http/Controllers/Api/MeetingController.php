@@ -8,6 +8,7 @@ use App\Models\Meeting;
 use App\Models\MeetingParticipant;
 use App\Services\JitsiJwtService;
 use App\Services\NumericCaptchaService;
+use App\Services\WhatsAppGatewayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -577,6 +578,59 @@ class MeetingController extends Controller
             'personal_room_code' => $user->personal_room_code,
             'meeting' => $this->formatMeeting($meeting, $user->id),
         ]);
+    }
+
+    public function whatsappStatus(WhatsAppGatewayService $wa): JsonResponse
+    {
+        return response()->json($wa->getPublicStatus());
+    }
+
+    public function shareWhatsapp(Request $request, string $code, WhatsAppGatewayService $wa): JsonResponse
+    {
+        $meeting = Meeting::where('code', $code)->firstOrFail();
+
+        if (in_array($meeting->status, ['ended', 'cancelled'], true)) {
+            return response()->json([
+                'message' => 'Meeting sudah berakhir atau dibatalkan.',
+            ], 410);
+        }
+
+        $validated = $request->validate([
+            'recipients' => ['required', 'string', 'min:5', 'max:4000'],
+            'message' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $joinUrl = rtrim((string) config('app.url'), '/') . '/m/' . $meeting->code;
+        $defaultTime = $meeting->scheduled_at
+            ? $meeting->scheduled_at->copy()->setTimezone(config('app.timezone'))->format('d M Y, H:i')
+            : 'Sekarang';
+
+        $defaultMessage = implode("\n", array_filter([
+            '*Undangan Meetingkeun*',
+            "Topik: {$meeting->title}",
+            "Waktu: {$defaultTime}",
+            "Kode ruang: {$meeting->code}",
+            "Tautan gabung: {$joinUrl}",
+            $meeting->hasPasscode() ? 'Catatan: Ruang ini dilindungi passcode (tanyakan ke host).' : null,
+        ]));
+
+        $finalMessage = trim((string) ($validated['message'] ?? '')) ?: $defaultMessage;
+
+        try {
+            $summary = $wa->broadcast([$validated['recipients']], $finalMessage);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
+        AuditLog::record('meeting.whatsapp_broadcast', $request->user()->id, 'meeting', $meeting->code, [
+            'total' => $summary['total'],
+            'sent_count' => $summary['sent_count'],
+            'failed_count' => $summary['failed_count'],
+        ], $request);
+
+        return response()->json($summary);
     }
 
     private function formatMeeting(Meeting $meeting, ?int $currentUserId, bool $isSuperadmin = false): array

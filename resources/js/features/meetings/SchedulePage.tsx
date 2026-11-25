@@ -7,6 +7,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { useCancelMeeting, useMeetingsPaginated } from './useMeetings';
 import { NewMeetingSheet } from './NewMeetingSheet';
 import { EditMeetingSheet } from './EditMeetingSheet';
+import { ShareWhatsappSheet } from './ShareWhatsappSheet';
 import { formatMeetingDate } from '@/lib/format';
 import { buildWhatsAppInvite, downloadIcsFile, getGoogleCalendarUrl } from '@/lib/invite';
 import { useToastStore } from '@/stores/useToastStore';
@@ -21,6 +22,7 @@ export function SchedulePage() {
   const cancelMeeting = useCancelMeeting();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+  const [shareMeeting, setShareMeeting] = useState<Meeting | null>(null);
 
   useEffect(() => {
     if (meta && page > 1 && meetings.length === 0) {
@@ -117,15 +119,11 @@ export function SchedulePage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    title="Bagikan tautan"
-                    aria-label="Salin tautan"
-                    onClick={() => handleShare(m.code, m.title)}
+                    title="Bagikan & Broadcast WhatsApp"
+                    aria-label="Bagikan & Broadcast WhatsApp"
+                    onClick={() => setShareMeeting(m)}
                   >
-                    {typeof navigator !== 'undefined' && 'share' in navigator ? (
-                      <Share2 className="h-4 w-4" strokeWidth={1.75} />
-                    ) : (
-                      <Copy className="h-4 w-4" strokeWidth={1.75} />
-                    )}
+                    <Share2 className="h-4 w-4" strokeWidth={1.75} />
                   </Button>
                   <Button
                     variant="outline"
@@ -197,6 +195,7 @@ export function SchedulePage() {
 
       <NewMeetingSheet open={sheetOpen} onClose={() => setSheetOpen(false)} defaultMode="scheduled" />
       <EditMeetingSheet meeting={editingMeeting} onClose={() => setEditingMeeting(null)} />
+      <ShareWhatsappSheet meeting={shareMeeting} onClose={() => setShareMeeting(null)} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Meeting;
 use App\Models\User;
+use App\Services\WhatsAppGatewayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -218,6 +219,73 @@ class AdminUserController extends Controller
                 'scheduled' => $meetings->where('status', 'scheduled')->count(),
                 'active_participants' => $meetings->sum('active_participants_count'),
             ],
+        ]);
+    }
+
+    public function getWhatsappSettings(WhatsAppGatewayService $wa): JsonResponse
+    {
+        return response()->json([
+            'whatsapp' => $wa->getAdminView(),
+        ]);
+    }
+
+    public function updateWhatsappSettings(Request $request, WhatsAppGatewayService $wa): JsonResponse
+    {
+        $validated = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'provider' => ['required', Rule::in(['fonnte', 'wablas', 'waha', 'custom'])],
+            'api_url' => ['nullable', 'url', 'max:500'],
+            'api_key' => ['nullable', 'string', 'max:500'],
+            'clear_api_key' => ['nullable', 'boolean'],
+            'session' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        if ($validated['enabled'] && empty($validated['api_url'])) {
+            return response()->json([
+                'message' => 'URL Endpoint API wajib diisi saat WhatsApp Gateway diaktifkan.',
+            ], 422);
+        }
+
+        $wa->saveConfig($validated);
+
+        AuditLog::record('admin.whatsapp.updated', $request->user()->id, 'setting', 'whatsapp', [
+            'enabled' => $validated['enabled'],
+            'provider' => $validated['provider'],
+        ], $request);
+
+        return response()->json([
+            'whatsapp' => $wa->getAdminView(),
+        ]);
+    }
+
+    public function testWhatsapp(Request $request, WhatsAppGatewayService $wa): JsonResponse
+    {
+        $validated = $request->validate([
+            'phone' => ['required', 'string', 'min:8', 'max:30'],
+            'message' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $msg = trim((string) ($validated['message'] ?? ''))
+            ?: "*Tes Koneksi WhatsApp Gateway*\nMeetingkeun berhasil terhubung dengan engine WhatsApp Anda.";
+
+        try {
+            $result = $wa->sendMessage($validated['phone'], $msg, false);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
+        if (! $result['success']) {
+            return response()->json([
+                'message' => $result['error'] ?: 'Gagal mengirim pesan tes.',
+                'result' => $result,
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Pesan tes berhasil dikirim ke ' . $result['phone'] . '.',
+            'result' => $result,
         ]);
     }
 

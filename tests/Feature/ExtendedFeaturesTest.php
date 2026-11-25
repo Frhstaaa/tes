@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ExtendedFeaturesTest extends TestCase
@@ -96,5 +97,70 @@ class ExtendedFeaturesTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'logs')
             ->assertJsonPath('logs.0.action', 'auth.login');
+    }
+
+    public function test_superadmin_can_configure_whatsapp_gateway_and_non_admin_cannot(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'is_active' => true]);
+        $admin = User::factory()->create(['role' => 'superadmin', 'is_active' => true]);
+
+        $this->actingAs($user)
+            ->getJson('/api/admin/whatsapp')
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->putJson('/api/admin/whatsapp', [
+                'enabled' => true,
+                'provider' => 'fonnte',
+                'api_url' => 'https://api.fonnte.com/send',
+                'api_key' => 'secret-token-123456',
+                'session' => 'default',
+            ])
+            ->assertOk()
+            ->assertJsonPath('whatsapp.enabled', true)
+            ->assertJsonPath('whatsapp.provider', 'fonnte')
+            ->assertJsonPath('whatsapp.api_key_set', true);
+
+        $this->actingAs($user)
+            ->getJson('/api/whatsapp/status')
+            ->assertOk()
+            ->assertJsonPath('enabled', true)
+            ->assertJsonPath('provider', 'fonnte');
+    }
+
+    public function test_user_can_broadcast_meeting_link_via_whatsapp_gateway(): void
+    {
+        Http::fake([
+            'https://api.fonnte.com/send' => Http::response(['status' => true, 'id' => 'msg-1'], 200),
+        ]);
+
+        $admin = User::factory()->create(['role' => 'superadmin', 'is_active' => true]);
+        $host = User::factory()->create(['role' => 'user', 'is_active' => true]);
+
+        $this->actingAs($admin)->putJson('/api/admin/whatsapp', [
+            'enabled' => true,
+            'provider' => 'fonnte',
+            'api_url' => 'https://api.fonnte.com/send',
+            'api_key' => 'secret-token-123456',
+        ])->assertOk();
+
+        $meeting = Meeting::create([
+            'code' => 'wa1-234-567',
+            'host_id' => $host->id,
+            'title' => 'Rapat Koordinasi',
+            'type' => 'instant',
+            'status' => 'live',
+        ]);
+
+        $res = $this->actingAs($host)->postJson("/api/meetings/{$meeting->code}/share-whatsapp", [
+            'recipients' => "081234567890, +62 856-7890-1234\n081234567890",
+        ]);
+
+        $res->assertOk()
+            ->assertJsonPath('total', 2)
+            ->assertJsonPath('sent_count', 2)
+            ->assertJsonPath('failed_count', 0);
+
+        Http::assertSentCount(2);
     }
 }

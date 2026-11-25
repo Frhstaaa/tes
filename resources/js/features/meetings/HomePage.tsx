@@ -19,9 +19,11 @@ import { Chip } from '@/components/ui/Chip';
 import { useAuth } from '@/features/auth/useAuth';
 import { useCreateMeeting, useMeetings, useOpenPersonalRoom } from './useMeetings';
 import { NewMeetingSheet } from './NewMeetingSheet';
+import { ShareWhatsappSheet } from './ShareWhatsappSheet';
 import { extractRoomCode, formatMeetingDate, formatTimeOnly } from '@/lib/format';
 import { extractErrorMessage } from '@/lib/api';
 import { useToastStore } from '@/stores/useToastStore';
+import type { Meeting } from '@/types';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ export function HomePage() {
 
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [scheduleSheetOpen, setScheduleSheetOpen] = useState(false);
+  const [shareMeeting, setShareMeeting] = useState<Meeting | null>(null);
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [joinError, setJoinError] = useState('');
 
@@ -242,15 +245,11 @@ export function HomePage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        aria-label="Bagikan tautan"
-                        onClick={() => handleShare(meeting.code, meeting.title)}
+                        aria-label="Bagikan & Broadcast WhatsApp"
+                        onClick={() => setShareMeeting(meeting)}
                         className="rounded-[12px] border-[#DCEAE7] bg-white dark:border-[#243832] dark:bg-[#1D2D28]"
                       >
-                        {typeof navigator !== 'undefined' && 'share' in navigator ? (
-                          <Share2 className="h-4 w-4" strokeWidth={1.75} />
-                        ) : (
-                          <Copy className="h-4 w-4" strokeWidth={1.75} />
-                        )}
+                        <Share2 className="h-4 w-4" strokeWidth={1.75} />
                       </Button>
                     </div>
                   </div>
@@ -411,6 +410,11 @@ export function HomePage() {
         open={scheduleSheetOpen}
         onClose={() => setScheduleSheetOpen(false)}
         defaultMode="scheduled"
+      />
+
+      <ShareWhatsappSheet
+        meeting={shareMeeting}
+        onClose={() => setShareMeeting(null)}
       />
     </div>
   );

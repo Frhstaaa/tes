@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, ArrowRight, KeyRound, Plus, Power, Search, ShieldCheck, Trash2, UserCheck, Users, UserX, Video } from 'lucide-react';
+import { Activity, ArrowRight, KeyRound, MessageCircle, Plus, Power, Search, Send, ShieldCheck, Trash2, UserCheck, Users, UserX, Video } from 'lucide-react';
 import { api, ensureCsrfCookie, extractErrorMessage } from '@/lib/api';
 import type { AdminMeetingEntry, AdminUser, AuditLogEntry, UserRole } from '@/types';
 import { useAuth } from '@/features/auth/useAuth';
@@ -27,10 +27,18 @@ export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const pushToast = useToastStore((s) => s.push);
 
-  const [activeTab, setActiveTab] = useState<'users' | 'meetings' | 'audit'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'meetings' | 'audit' | 'whatsapp'>('users');
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+
+  // WhatsApp Gateway settings state
+  const [waEnabled, setWaEnabled] = useState(false);
+  const [waProvider, setWaProvider] = useState<'fonnte' | 'wablas' | 'waha' | 'custom'>('fonnte');
+  const [waApiUrl, setWaApiUrl] = useState('');
+  const [waApiKey, setWaApiKey] = useState('');
+  const [waSession, setWaSession] = useState('default');
+  const [waTestPhone, setWaTestPhone] = useState('');
 
   // Create form state
   const [newName, setNewName] = useState('');
@@ -61,6 +69,79 @@ export function AdminUsersPage() {
       return res.data.logs;
     },
     enabled: activeTab === 'audit',
+  });
+
+  const waQuery = useQuery<{
+    enabled: boolean;
+    provider: 'fonnte' | 'wablas' | 'waha' | 'custom';
+    api_url: string;
+    session: string;
+    api_key_set: boolean;
+    api_key_preview: string;
+  }>({
+    queryKey: ['admin', 'whatsapp'],
+    queryFn: async () => {
+      const res = await api.get<{
+        whatsapp: {
+          enabled: boolean;
+          provider: 'fonnte' | 'wablas' | 'waha' | 'custom';
+          api_url: string;
+          session: string;
+          api_key_set: boolean;
+          api_key_preview: string;
+        };
+      }>('/admin/whatsapp');
+      return res.data.whatsapp;
+    },
+    enabled: activeTab === 'whatsapp',
+  });
+
+  useEffect(() => {
+    if (waQuery.data) {
+      setWaEnabled(waQuery.data.enabled);
+      setWaProvider(waQuery.data.provider);
+      setWaApiUrl(waQuery.data.api_url);
+      setWaSession(waQuery.data.session || 'default');
+    }
+  }, [waQuery.data]);
+
+  const saveWaMutation = useMutation({
+    mutationFn: async () => {
+      await ensureCsrfCookie();
+      const res = await api.put('/admin/whatsapp', {
+        enabled: waEnabled,
+        provider: waProvider,
+        api_url: waApiUrl.trim() || null,
+        api_key: waApiKey.trim() || undefined,
+        session: waSession.trim() || 'default',
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      setWaApiKey('');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'whatsapp'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp', 'status'] });
+      pushToast('Pengaturan WhatsApp Gateway disimpan.', 'success');
+    },
+    onError: (err) => {
+      pushToast(extractErrorMessage(err, 'Gagal menyimpan pengaturan WhatsApp Gateway.'), 'danger');
+    },
+  });
+
+  const testWaMutation = useMutation({
+    mutationFn: async () => {
+      await ensureCsrfCookie();
+      const res = await api.post<{ message: string }>('/admin/whatsapp/test', {
+        phone: waTestPhone.trim(),
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      pushToast(data.message || 'Pesan tes terkirim.', 'success');
+    },
+    onError: (err) => {
+      pushToast(extractErrorMessage(err, 'Gagal mengirim pesan tes WhatsApp.'), 'danger');
+    },
   });
 
   const meetingsQuery = useQuery<{
@@ -251,6 +332,18 @@ export function AdminUsersPage() {
           <Activity className="h-4 w-4" strokeWidth={1.75} />
           <span>Log Aktivitas</span>
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('whatsapp')}
+          className={`inline-flex min-h-[38px] cursor-pointer items-center gap-2 rounded-[8px] px-4 text-sm font-medium transition-colors ${
+            activeTab === 'whatsapp'
+              ? 'border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]'
+              : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
+          }`}
+        >
+          <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
+          <span>WhatsApp Gateway</span>
+        </button>
       </div>
 
       {activeTab === 'meetings' ? (
@@ -374,6 +467,121 @@ export function AdminUsersPage() {
               )}
             </tbody>
           </table>
+        </div>
+      ) : activeTab === 'whatsapp' ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveWaMutation.mutate();
+            }}
+            className="space-y-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)] lg:col-span-7"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] pb-3">
+              <div>
+                <h2 className="font-display text-lg font-bold">Engine WhatsApp Gateway</h2>
+                <p className="text-xs text-[var(--ink-soft)]">
+                  Aktifkan agar semua user bisa kirim &amp; broadcast tautan meeting otomatis via WhatsApp.
+                </p>
+              </div>
+              <label className="inline-flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={waEnabled}
+                  onChange={(e) => setWaEnabled(e.target.checked)}
+                  className="h-5 w-5 accent-[var(--moss)]"
+                />
+                <span className="text-sm font-semibold">{waEnabled ? 'Aktif' : 'Nonaktif'}</span>
+              </label>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="wa-provider" className="text-sm font-medium text-[var(--ink)]">
+                Provider / Engine Gateway
+              </label>
+              <select
+                id="wa-provider"
+                value={waProvider}
+                onChange={(e) => {
+                  const p = e.target.value as 'fonnte' | 'wablas' | 'waha' | 'custom';
+                  setWaProvider(p);
+                  const defaults: Record<string, string> = {
+                    fonnte: 'https://api.fonnte.com/send',
+                    wablas: 'https://solo.wablas.com/api/send-message',
+                    waha: 'http://127.0.0.1:3000/api/sendText',
+                    custom: '',
+                  };
+                  if (!waApiUrl || Object.values(defaults).includes(waApiUrl)) {
+                    setWaApiUrl(defaults[p]);
+                  }
+                }}
+                className="min-h-[44px] w-full rounded-[13px] border border-[var(--line)] bg-[var(--paper-2)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--moss)] focus:outline-none"
+              >
+                <option value="fonnte">Fonnte (api.fonnte.com)</option>
+                <option value="wablas">Wablas</option>
+                <option value="waha">WAHA (Self-hosted Docker/HTTP)</option>
+                <option value="custom">Custom HTTP JSON Webhook</option>
+              </select>
+            </div>
+
+            <Input
+              label="URL Endpoint API"
+              placeholder="https://api.fonnte.com/send"
+              value={waApiUrl}
+              onChange={(e) => setWaApiUrl(e.target.value)}
+            />
+
+            <Input
+              label="API Key / Token"
+              type="password"
+              placeholder={
+                waQuery.data?.api_key_set
+                  ? `Tersimpan (${waQuery.data.api_key_preview}) — kosongkan jika tidak diubah`
+                  : 'Masukkan token / API key gateway'
+              }
+              value={waApiKey}
+              onChange={(e) => setWaApiKey(e.target.value)}
+            />
+
+            <Input
+              label="Session / Device ID (Opsional)"
+              placeholder="default"
+              value={waSession}
+              onChange={(e) => setWaSession(e.target.value)}
+              hint="Dipakai oleh WAHA atau gateway multi-device."
+            />
+
+            <Button type="submit" variant="primary" size="lg" loading={saveWaMutation.isPending}>
+              Simpan Pengaturan Gateway
+            </Button>
+          </form>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!waTestPhone.trim()) return;
+              testWaMutation.mutate();
+            }}
+            className="space-y-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)] lg:col-span-5 h-fit"
+          >
+            <div>
+              <h2 className="font-display text-lg font-bold">Uji Kirim Pesan</h2>
+              <p className="text-xs text-[var(--ink-soft)]">
+                Simpan pengaturan terlebih dahulu, lalu kirim pesan tes ke nomor WhatsApp Anda.
+              </p>
+            </div>
+            <Input
+              label="Nomor WhatsApp Tujuan"
+              placeholder="081234567890"
+              value={waTestPhone}
+              onChange={(e) => setWaTestPhone(e.target.value)}
+              required
+            />
+            <Button type="submit" variant="outline" size="lg" className="w-full" loading={testWaMutation.isPending}>
+              <Send className="h-4 w-4" strokeWidth={1.75} />
+              <span>Kirim Pesan Tes</span>
+            </Button>
+          </form>
         </div>
       ) : (
         <>

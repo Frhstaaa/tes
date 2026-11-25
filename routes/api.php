@@ -32,6 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/meetings/{code}/participants/{id}/deny', [MeetingController::class, 'deny']);
     Route::post('/meetings/{code}/participants/{id}/kick', [MeetingController::class, 'kick']);
     Route::post('/meetings/{code}/participants/{id}/cohost', [MeetingController::class, 'cohost']);
+    Route::get('/whatsapp/status', [MeetingController::class, 'whatsappStatus']);
+    Route::post('/meetings/{code}/share-whatsapp', [MeetingController::class, 'shareWhatsapp'])->middleware('throttle:20,1');
 
     // Superadmin multi-user & audit management
     Route::middleware('superadmin')->prefix('admin')->group(function () {
@@ -41,6 +43,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
         Route::get('/meetings', [AdminUserController::class, 'meetings']);
         Route::get('/audit-logs', [AdminUserController::class, 'auditLogs']);
+        Route::get('/whatsapp', [AdminUserController::class, 'getWhatsappSettings']);
+        Route::put('/whatsapp', [AdminUserController::class, 'updateWhatsappSettings']);
+        Route::post('/whatsapp/test', [AdminUserController::class, 'testWhatsapp']);
     });
 });
 
