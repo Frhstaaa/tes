@@ -36,12 +36,12 @@ export function AppLayout() {
   };
 
   return (
-    <div className="relative min-h-dvh overflow-x-hidden bg-[#F2F8F7] text-[#1E293B] dark:bg-[#111B18] dark:text-[#F1F5F9] md:flex">
+    <div className="relative min-h-dvh overflow-x-clip bg-[#F2F8F7] text-[#1E293B] dark:bg-[#111B18] dark:text-[#F1F5F9] md:flex">
       {/* Organic Flowing Teal/Mint Background Waves (matches reference mockup) */}
       <PageWaves />
 
       {/* Desktop Sidebar */}
-      <aside className="relative z-10 hidden md:flex md:w-64 md:shrink-0 md:flex-col md:border-r md:border-[#DCEBE8] md:bg-white/85 md:px-4 md:py-6 md:backdrop-blur-md dark:md:border-[#22352F] dark:md:bg-[#15221E]/90">
+      <aside className="relative z-10 hidden md:sticky md:top-0 md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:overflow-y-auto md:border-r md:border-[#DCEBE8] md:bg-white/85 md:px-4 md:py-6 md:backdrop-blur-md dark:md:border-[#22352F] dark:md:bg-[#15221E]/90">
         <div className="mb-8 px-2">
           <BrandLogo size="md" />
         </div>
