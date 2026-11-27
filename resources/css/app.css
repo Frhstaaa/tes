@@ -4,6 +4,9 @@
 :root {
   --paper: #F2F8F7;
   --paper-2: #FFFFFF;
+  --secondary-bg: #E7F3F0;
+  --muted-bg: #EAF3F1;
+  --accent-bg: #E4F2EE;
   --ink: #1E293B;
   --ink-soft: #64748B;
   --moss: #0B7A69;
@@ -27,6 +30,9 @@
 .dark {
   --paper: #111B18;
   --paper-2: #172420;
+  --secondary-bg: #1D2E29;
+  --muted-bg: #1A2925;
+  --accent-bg: #20332D;
   --ink: #F1F5F9;
   --ink-soft: #94A3B8;
   --moss: #0D9488;
@@ -38,6 +44,32 @@
   --clay-bright: #E0663E;
   --sand: #D4B47C;
   --line: #243832;
+}
+
+@theme inline {
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-card: var(--paper-2);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--paper-2);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--moss);
+  --color-primary-foreground: var(--moss-fg);
+  --color-secondary: var(--secondary-bg);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--muted-bg);
+  --color-muted-foreground: var(--ink-soft);
+  --color-accent: var(--accent-bg);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--clay);
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--moss);
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
 }
 
 @layer base {

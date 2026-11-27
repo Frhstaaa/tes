@@ -9,6 +9,12 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Chip } from '@/components/ui/Chip';
 import { Sheet } from '@/components/ui/Sheet';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { useToastStore } from '@/stores/useToastStore';
 import { formatMeetingDate } from '@/lib/format';
 
@@ -287,84 +293,62 @@ export function AdminUsersPage() {
 
       {/* Stats Strip */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Ringkasan pengguna">
-        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Total Akun</span>
-          <p className="mt-1 font-mono text-2xl font-semibold">{stats.total}</p>
-        </div>
-        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Aktif</span>
-          <p className="mt-1 font-mono text-2xl font-semibold text-[var(--moss)] dark:text-[var(--moss-light)]">
-            {stats.active}
-          </p>
-        </div>
-        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Superadmin</span>
-          <p className="mt-1 font-mono text-2xl font-semibold">{stats.superadmins}</p>
-        </div>
-        <div className="rounded-[12px] border border-[var(--line)] bg-[var(--paper-2)]/50 p-4">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Nonaktif</span>
-          <p className="mt-1 font-mono text-2xl font-semibold text-[var(--clay)]">
-            {stats.inactive}
-          </p>
-        </div>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardDescription className="text-xs font-medium">Total Akun</CardDescription>
+            <CardTitle className="font-mono text-2xl font-semibold">{stats.total}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardDescription className="text-xs font-medium">Aktif</CardDescription>
+            <CardTitle className="font-mono text-2xl font-semibold text-primary">
+              {stats.active}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardDescription className="text-xs font-medium">Superadmin</CardDescription>
+            <CardTitle className="font-mono text-2xl font-semibold">{stats.superadmins}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardDescription className="text-xs font-medium">Nonaktif</CardDescription>
+            <CardTitle className="font-mono text-2xl font-semibold text-destructive">
+              {stats.inactive}
+            </CardTitle>
+          </CardHeader>
+        </Card>
       </section>
 
       {/* Tab Switcher */}
-      <div className="flex flex-wrap gap-1 rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)] p-1 w-fit">
-        <button
-          type="button"
-          onClick={() => setActiveTab('users')}
-          className={`inline-flex min-h-[38px] cursor-pointer items-center gap-2 rounded-[8px] px-4 text-sm font-medium transition-colors ${
-            activeTab === 'users'
-              ? 'border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]'
-              : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-          }`}
-        >
-          <Users className="h-4 w-4" strokeWidth={1.75} />
-          <span>Pengguna</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('meetings')}
-          className={`inline-flex min-h-[38px] cursor-pointer items-center gap-2 rounded-[8px] px-4 text-sm font-medium transition-colors ${
-            activeTab === 'meetings'
-              ? 'border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]'
-              : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-          }`}
-        >
-          <Video className="h-4 w-4" strokeWidth={1.75} />
-          <span>Pantau Meeting</span>
-          {(meetingsQuery.data?.stats.live ?? 0) > 0 && (
-            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--clay-bright)] px-1.5 font-mono text-[11px] font-semibold text-[#F6F2E9]">
-              {meetingsQuery.data?.stats.live}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('audit')}
-          className={`inline-flex min-h-[38px] cursor-pointer items-center gap-2 rounded-[8px] px-4 text-sm font-medium transition-colors ${
-            activeTab === 'audit'
-              ? 'border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]'
-              : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-          }`}
-        >
-          <Activity className="h-4 w-4" strokeWidth={1.75} />
-          <span>Log Aktivitas</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('whatsapp')}
-          className={`inline-flex min-h-[38px] cursor-pointer items-center gap-2 rounded-[8px] px-4 text-sm font-medium transition-colors ${
-            activeTab === 'whatsapp'
-              ? 'border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]'
-              : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-          }`}
-        >
-          <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
-          <span>WhatsApp Gateway</span>
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+        <TabsList className="w-fit">
+          <TabsTrigger value="users">
+            <Users className="size-4" strokeWidth={1.75} />
+            <span>Pengguna</span>
+          </TabsTrigger>
+          <TabsTrigger value="meetings">
+            <Video className="size-4" strokeWidth={1.75} />
+            <span>Pantau Meeting</span>
+            {(meetingsQuery.data?.stats.live ?? 0) > 0 && (
+              <Badge variant="destructive" className="h-5 min-w-5 rounded-full px-1.5 font-mono text-[11px]">
+                {meetingsQuery.data?.stats.live}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="audit">
+            <Activity className="size-4" strokeWidth={1.75} />
+            <span>Log Aktivitas</span>
+          </TabsTrigger>
+          <TabsTrigger value="whatsapp">
+            <MessageCircle className="size-4" strokeWidth={1.75} />
+            <span>WhatsApp Gateway</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {activeTab === 'meetings' ? (
         <div className="space-y-4">
@@ -515,36 +499,31 @@ export function AdminUsersPage() {
               </label>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="wa-provider" className="text-sm font-medium text-[var(--ink)]">
-                Provider / Engine Gateway
-              </label>
-              <select
-                id="wa-provider"
-                value={waProvider}
-                onChange={(e) => {
-                  const p = e.target.value as 'mardira' | 'fonnte' | 'wablas' | 'waha' | 'custom';
-                  setWaProvider(p);
-                  const defaults: Record<string, string> = {
-                    mardira: 'http://127.0.0.1:8001/api/v1/messages/send',
-                    fonnte: 'https://api.fonnte.com/send',
-                    wablas: 'https://solo.wablas.com/api/send-message',
-                    waha: 'http://127.0.0.1:3000/api/sendText',
-                    custom: '',
-                  };
-                  if (!waApiUrl || Object.values(defaults).includes(waApiUrl)) {
-                    setWaApiUrl(defaults[p]);
-                  }
-                }}
-                className="min-h-[44px] w-full rounded-[13px] border border-[var(--line)] bg-[var(--paper-2)] px-3.5 text-sm text-[var(--ink)] focus:border-[var(--moss)] focus:outline-none"
-              >
-                <option value="mardira">MARDIRA WA Gateway (v1.0 Bearer)</option>
-                <option value="fonnte">Fonnte (api.fonnte.com)</option>
-                <option value="wablas">Wablas</option>
-                <option value="waha">WAHA (Self-hosted Docker/HTTP)</option>
-                <option value="custom">Custom HTTP JSON Webhook</option>
-              </select>
-            </div>
+            <Select
+              id="wa-provider"
+              label="Provider / Engine Gateway"
+              value={waProvider}
+              onChange={(e) => {
+                const p = e.target.value as 'mardira' | 'fonnte' | 'wablas' | 'waha' | 'custom';
+                setWaProvider(p);
+                const defaults: Record<string, string> = {
+                  mardira: 'http://127.0.0.1:8001/api/v1/messages/send',
+                  fonnte: 'https://api.fonnte.com/send',
+                  wablas: 'https://solo.wablas.com/api/send-message',
+                  waha: 'http://127.0.0.1:3000/api/sendText',
+                  custom: '',
+                };
+                if (!waApiUrl || Object.values(defaults).includes(waApiUrl)) {
+                  setWaApiUrl(defaults[p]);
+                }
+              }}
+            >
+              <option value="mardira">MARDIRA WA Gateway (v1.0 Bearer)</option>
+              <option value="fonnte">Fonnte (api.fonnte.com)</option>
+              <option value="wablas">Wablas</option>
+              <option value="waha">WAHA (Self-hosted Docker/HTTP)</option>
+              <option value="custom">Custom HTTP JSON Webhook</option>
+            </Select>
 
             <Input
               label="URL Endpoint API"
@@ -600,22 +579,22 @@ export function AdminUsersPage() {
             </div>
 
             {waQuotaInfo && waProvider === 'mardira' && (
-              <div className="rounded-[14px] border border-[var(--line)] bg-[var(--paper)] p-3.5 text-xs space-y-1">
-                <p className="font-semibold text-[var(--ink)]">
-                  {waQuotaInfo.workspace?.name ?? 'MARDIRA WA Workspace'} ·{' '}
-                  <span className="text-[var(--moss)]">{waQuotaInfo.plan?.name ?? 'Active'}</span>
-                </p>
-                <p className="text-[var(--ink-soft)]">
+              <Alert variant="success">
+                <AlertTitle className="flex items-center gap-2 text-xs">
+                  <span>{waQuotaInfo.workspace?.name ?? 'MARDIRA WA Workspace'}</span>
+                  <Badge variant="success">{waQuotaInfo.plan?.name ?? 'Active'}</Badge>
+                </AlertTitle>
+                <AlertDescription>
                   Sisa kuota:{' '}
-                  <span className="font-mono font-semibold text-[var(--ink)]">
+                  <span className="font-mono font-semibold text-foreground">
                     {waQuotaInfo.quota?.remaining ?? 0} / {waQuotaInfo.quota?.monthly_total ?? 0}
                   </span>{' '}
                   · Perangkat terhubung:{' '}
-                  <span className="font-mono font-semibold text-[var(--ink)]">
+                  <span className="font-mono font-semibold text-foreground">
                     {waQuotaInfo.devices?.connected ?? 0}/{waQuotaInfo.devices?.total ?? 0}
                   </span>
-                </p>
-              </div>
+                </AlertDescription>
+              </Alert>
             )}
           </form>
 

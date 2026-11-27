@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Download, LogOut, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Chip } from '@/components/ui/Chip';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from './useAuth';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { useToastStore } from '@/stores/useToastStore';
@@ -48,76 +50,84 @@ export function AccountPage() {
           <h1 className="font-display text-2xl font-bold md:text-3xl">Akun</h1>
           <p className="text-sm text-[var(--ink-soft)]">{user?.email}</p>
         </div>
-        <Chip tone={user?.role === 'superadmin' ? 'sand' : 'neutral'}>
+        <Badge variant={user?.role === 'superadmin' ? 'warning' : 'outline'}>
           {user?.role === 'superadmin' ? 'Superadmin' : 'Host / User'}
-        </Chip>
+        </Badge>
       </header>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-        <form
-          onSubmit={handleSave}
-          className="space-y-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)] md:col-span-7"
-        >
-          <Input
-            label="Nama tampilan"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Button type="submit" variant="primary" loading={isUpdatingProfile}>
-            Simpan perubahan
-          </Button>
-        </form>
+        <Card className="md:col-span-7">
+          <CardHeader>
+            <CardTitle>Profil</CardTitle>
+            <CardDescription>Perbarui nama tampilan Anda di ruang meeting.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSave} className="flex flex-col gap-4">
+              <Input
+                label="Nama tampilan"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <Button type="submit" variant="primary" loading={isUpdatingProfile} className="w-fit">
+                Simpan perubahan
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-4 md:col-span-5">
+        <div className="flex flex-col gap-4 md:col-span-5">
           {user?.role === 'superadmin' && (
             <Link
               to="/admin/users"
-              className="flex min-h-[56px] items-center justify-between rounded-[12px] border border-[var(--moss)]/40 bg-[var(--moss)]/10 px-4 py-3 transition-colors hover:bg-[var(--moss)]/15"
+              className="flex min-h-[56px] items-center justify-between rounded-xl border border-primary/35 bg-primary/10 px-4 py-3 transition-colors hover:bg-primary/15"
             >
-              <span className="flex items-center gap-3 text-sm font-semibold text-[var(--ink)]">
-                <ShieldCheck className="h-5 w-5 text-[var(--moss)] dark:text-[var(--moss-light)]" strokeWidth={1.75} />
+              <span className="flex items-center gap-3 text-sm font-semibold text-foreground">
+                <ShieldCheck className="size-5 text-primary" strokeWidth={1.75} />
                 <span>Kelola Pengguna (Superadmin)</span>
               </span>
-              <ArrowRight className="h-4 w-4 text-[var(--moss)] dark:text-[var(--moss-light)]" strokeWidth={1.75} />
+              <ArrowRight className="size-4 text-primary" strokeWidth={1.75} />
             </Link>
           )}
 
           <button
             type="button"
             onClick={toggle}
-            className="flex min-h-[54px] w-full cursor-pointer items-center justify-between rounded-[20px] border border-[var(--line)] bg-[var(--paper-2)] px-4 py-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition-colors hover:border-[var(--moss)]/40"
+            className="flex min-h-[54px] w-full cursor-pointer items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-left shadow-xs transition-colors hover:border-primary/40"
           >
             <span className="flex items-center gap-3 text-sm font-medium">
               {dark ? (
-                <Moon className="h-4 w-4 text-[var(--sand)]" strokeWidth={1.75} />
+                <Moon className="size-4 text-[var(--sand)]" strokeWidth={1.75} />
               ) : (
-                <Sun className="h-4 w-4 text-[var(--moss)]" strokeWidth={1.75} />
+                <Sun className="size-4 text-primary" strokeWidth={1.75} />
               )}
               <span>{dark ? 'Mode gelap aktif' : 'Mode terang (kertas)'}</span>
             </span>
-            <span className="font-mono text-xs text-[var(--ink-soft)]">Ganti</span>
+            <Badge variant="outline" className="font-mono">Ganti</Badge>
           </button>
 
           {canInstall && (
             <Button variant="primary" className="w-full" onClick={() => install()}>
-              <Download className="h-4 w-4" strokeWidth={1.75} />
+              <Download className="size-4" strokeWidth={1.75} />
               <span>Pasang Meetingkeun di HP</span>
             </Button>
           )}
 
           {isIos && !isInstalled && (
-            <p className="rounded-[10px] border border-[var(--line)] bg-[var(--paper-2)]/50 px-3.5 py-2.5 text-xs text-[var(--ink-soft)]">
-              Untuk memasang di iPhone/iPad: ketuk tombol <strong>Bagikan</strong> di Safari lalu pilih <strong>Tambah ke Layar Utama</strong>.
-            </p>
+            <Alert>
+              <AlertDescription>
+                Untuk memasang di iPhone/iPad: ketuk tombol <strong>Bagikan</strong> di Safari lalu pilih{' '}
+                <strong>Tambah ke Layar Utama</strong>.
+              </AlertDescription>
+            </Alert>
           )}
 
           <Button
             variant="outline"
-            className="w-full text-[var(--clay)]"
+            className="w-full text-destructive"
             onClick={handleLogout}
             loading={isLoggingOut}
           >
-            <LogOut className="h-4 w-4" strokeWidth={1.75} />
+            <LogOut className="size-4" strokeWidth={1.75} />
             <span>Keluar dari akun</span>
           </Button>
         </div>
